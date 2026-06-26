@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Configurações - Cadastro de Usuários</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="supabase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="configuracoes.css">
+</head>
+
+<body>
+    <div class="page-header-row">
+        <h1 id="titulo" class="page-title">
+            PORTAL PART
+        </h1>
+    </div>
+    <br>
+
+    <div class="menu-container">
+    <!-- <button id="btn-relatorios" class="menu-btn" onclick="location.href='relatorios-tecnicos.html'">Relatórios<br>Técnicos</button>
+    <button id="btn-checklist" class="menu-btn" onclick="location.href='checklist.html'">Checklist</button>
+    <button id="btn-indices" class="menu-btn" onclick="location.href='indices.html'">Índices</button>
+    <button id="btn-seloprojeto" class="menu-btn" onclick="location.href='seloprojeto.html'">Selo Projeto</button>
+    <button id="btn-fluxos" class="menu-btn" onclick="location.href='fluxos.html'">Fluxos</button> -->
+    <button id="btn-calendario" class="menu-btn" onclick="location.href='calendario.html'">Calendário</button>
+    <!-- <button id="btn-links" class="menu-btn" onclick="location.href='links.html'">Links</button>
+    <button id="btn-modulos" class="menu-btn" onclick="location.href='modulos.html'">Módulos
+      <br>Homologados</button>
+    <button id="btn-ferramentas" class="menu-btn"
+      onclick="location.href='ferramentas.html'">Ferramentas</button>
+    <button id="btn-controlens" class="menu-btn" onclick="location.href='controlens.html'">Controle<br>Análises</button>
+    <button id="btn-engenharia" class="menu-btn" onclick="location.href='engenharia.html'">Engenharia</button> -->
+    <button id="btn-configuracoes" class="menu-btn" onclick="location.href='configuracoes.html'">Configurações</button>
+    <button class="menu-btn menu-btn-logout" onclick="logout()">Sair</button>
+    </div>
+
+    <script src="auth.js"></script>
+    <script src="menu.js"></script>
+
+    <h1 class="page-heading">CADASTRO DE USUÁRIOS</h1>
+
+    <div id="container" class="config-container">
+        <div class="card card--narrow card--accent-orange">
+            <h2 class="card-title card-title--orange">🔐 Testador de Login</h2>
+            <form id="formTestadorLogin" class="stack-form">
+                <div class="form-row">
+                    <label for="emailTeste" class="form-label">Email</label>
+                    <input type="email" id="emailTeste" placeholder="email@exemplo.com" required class="form-control">
+                </div>
+                <div class="form-row">
+                    <label for="senhaTeste" class="form-label">Senha</label>
+                    <input type="password" id="senhaTeste" placeholder="Insira a senha" required class="form-control">
+                </div>
+                <button type="submit" class="btn btn--login-test">Testar Login</button>
+            </form>
+            <div id="resultadoTeste" class="result-box is-hidden"></div>
+        </div>
+
+        <div class="card card--narrow card--accent-green">
+            <h2 class="card-title card-title--green">👤 Novo Usuário</h2>
+            <form id="form" class="stack-form">
+                <input type="hidden" id="usuarioId">
+                <div class="form-row">
+                    <label for="nomeUsuario" class="form-label">Nome Usuário</label>
+                    <input type="text" id="nomeUsuario" placeholder="Nome completo" required class="form-control">
+                </div>
+                <div class="form-row">
+                    <label for="matricula" class="form-label">Matrícula</label>
+                    <input type="text" id="matricula" placeholder="Matrícula" required class="form-control">
+                </div>
+                <div class="form-row">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" id="email" placeholder="email@exemplo.com" required class="form-control">
+                </div>
+                <div class="form-row">
+                    <label for="telefone" class="form-label">Telefone</label>
+                    <input type="text" id="telefone" placeholder="(00) 00000-0000" required class="form-control">
+                </div>
+                <div class="form-row">
+                    <label for="dataNasc" class="form-label">Data Nasc.</label>
+                    <input type="date" id="dataNasc" required class="form-control">
+                </div>
+                <div class="form-row">
+                    <label for="senha" class="form-label">Senha</label>
+                    <input type="password" id="senha" placeholder="Mínimo 6 caracteres" minlength="6" required class="form-control">
+                </div>
+                <div class="form-row">
+                    <label for="categoria" class="form-label">Categoria</label>
+                    <select id="categoria" class="form-control">
+                        <option value="usuario">Usuário</option>
+                        <option value="tecnico">Técnico</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" id="btnSalvar" class="btn btn--save">Cadastrar</button>
+                <button type="button" id="btnCancelarEdicao" class="btn btn--cancel is-hidden">Cancelar edição</button>
+            </form>
+        </div>
+
+        <div class="card card--wide">
+            <h2 class="card-title">Usuários Cadastrados</h2>
+            <div id="usuarios-lista">
+                <table class="data-table users-table">
+                    <thead>
+                        <tr>
+                            <th>Nome Usuário</th>
+                            <th>Matrícula</th>
+                            <th>Email</th>
+                            <th>Telefone</th>
+                            <th>Data Nasc.</th>
+                            <th>Categoria</th>
+                            <th>Data Criação</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usuarios-tbody">
+                        <tr>
+                            <td colspan="8" class="cell-message">Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="actions-row">
+            <button id="toggleLogsBtn" class="btn-toggle-logs" onclick="toggleLogs()">📊 Exibir Logs de Acesso</button>
+        </div>
+
+        <div id="logsSection" class="card card--wide is-hidden">
+            <h2 class="logs-title">📋 Histórico de Acessos</h2>
+            <div id="logCount" class="log-count"></div>
+            <div class="table-scroll">
+                <table id="logTable" class="data-table logs-table">
+                    <thead>
+                        <tr>
+                            <th>Nome Usuário</th>
+                            <th>Email</th>
+                            <th>Categoria</th>
+                            <th>Data e Hora do Acesso</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="configuracoes.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Portal Part</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="container">
+        <div class="logo-container">
+            <div class="icon-wrapper">
+                <svg class="transformer-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Engrenagem externa -->
+                    <g id="gear">
+                        <!-- Dentes da engrenagem -->
+                        <path d="M 32 8 L 34 12 L 36 8 L 38 12 L 40 8 L 42 12 L 44 10 L 46 16 L 48 14 L 50 20 L 51 19 L 52 24 L 52 26 L 51 31 L 50 30 L 48 36 L 46 34 L 44 40 L 42 38 L 40 42 L 38 38 L 36 42 L 34 38 L 32 42 L 30 38 L 28 42 L 26 38 L 24 40 L 22 34 L 20 36 L 18 30 L 16 31 L 14 26 L 14 24 L 16 19 L 18 20 L 20 14 L 22 16 L 24 10 L 26 12 L 28 8 L 30 12 Z" 
+                              fill="#d4fa00" stroke="#a8cc00" stroke-width="1"/>
+                        
+                        <!-- Círculo interno da engrenagem -->
+                        <circle cx="32" cy="25" r="12" fill="#0a4d2e" stroke="#d4fa00" stroke-width="2"/>
+                        <circle cx="32" cy="25" r="9" fill="#1a7a4a"/>
+                    </g>
+                    
+                    <!-- Raio elétrico central -->
+                    <g id="lightning">
+                        <path d="M 35 16 L 28 26 L 32 26 L 29 36 L 38 24 L 34 24 Z" 
+                              fill="#d4fa00" stroke="#fff" stroke-width="0.5" opacity="0.95">
+                            <animate attributeName="opacity" values="0.95;1;0.95" dur="2s" repeatCount="indefinite"/>
+                        </path>
+                        <!-- Brilho interno do raio -->
+                        <path d="M 34 18 L 30 25 L 32 25 L 30 32 L 36 25 L 34 25 Z" 
+                              fill="#fff" opacity="0.6">
+                            <animate attributeName="opacity" values="0.6;0.9;0.6" dur="2s" repeatCount="indefinite"/>
+                        </path>
+                    </g>
+                    
+                    <!-- Partículas de energia ao redor -->
+                    <circle cx="18" cy="18" r="1.5" fill="#d4fa00" opacity="0.7">
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" begin="0s"/>
+                    </circle>
+                    <circle cx="46" cy="18" r="1.5" fill="#d4fa00" opacity="0.7">
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" begin="0.5s"/>
+                    </circle>
+                    <circle cx="16" cy="32" r="1.5" fill="#d4fa00" opacity="0.7">
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" begin="1s"/>
+                    </circle>
+                    <circle cx="48" cy="32" r="1.5" fill="#d4fa00" opacity="0.7">
+                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" begin="0.3s"/>
+                    </circle>
+                    
+                    <!-- Detalhe central -->
+                    <circle cx="32" cy="25" r="3" fill="#d4fa00" opacity="0.8"/>
+                    <circle cx="32" cy="25" r="1.5" fill="#fff" opacity="0.9">
+                        <animate attributeName="r" values="1.5;2;1.5" dur="2s" repeatCount="indefinite"/>
+                    </circle>
+                </svg>
+            </div>
+            <h2>PORTAL<br>PART</h2>
+        </div>
+        <p class="subtitle">Faça login para acessar o sistema</p>
+        <div id="mensagem-erro"></div>
+        <form id="formLogin">
+            <div class="form-group">
+                <label for="usuario">Email</label>
+                <div class="input-wrapper">
+                    <input type="email" id="usuario" required placeholder="seu.email@exemplo.com" autocomplete="email">
+                    <span class="input-icon">📧</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="senha">Senha</label>
+                <div class="input-wrapper">
+                    <input type="password" id="senha" required placeholder="••••••••" autocomplete="current-password">
+                    <span class="input-icon">🔒</span>
+                </div>
+            </div>
+            <button type="submit" id="btnLogin">Entrar</button>
+        </form>
+    </div>
+
+    <script src="supabase-config.js"></script>
+    <script src="index.js"></script>
+
+
+</body>
+
+</html>
