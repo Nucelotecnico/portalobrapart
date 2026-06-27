@@ -70,12 +70,14 @@ html {
     left: 100%;
 }
 
-.menu-btn:hover {
+.menu-btn:hover,
+.menu-btn--active {
     background: linear-gradient(145deg, #ff9f68, #ffb088);
     box-shadow: 0 8px 25px rgba(255, 159, 104, 0.4);
 }
 
-.menu-btn:active {
+.menu-btn:active,
+.menu-btn--active:active {
     box-shadow: 0 4px 15px rgba(255, 159, 104, 0.3);
 }
 

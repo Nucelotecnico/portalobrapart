@@ -27,26 +27,28 @@ body {
 .menu-btn {
     background: linear-gradient(145deg, #2e7d32, #43a047);
     color: #fff;
-    padding: 12px 24px;
+    padding: 12px clamp(10px, 1.2vw, 18px);
     border-radius: 10px;
     border: none;
     cursor: pointer;
     font-family: Roboto;
     font-weight: 600;
-    font-size: 0.95em;
+    font-size: clamp(0.72rem, 0.8vw, 0.95rem);
     transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3);
     position: relative;
     overflow: hidden;
     margin: 0;
     box-sizing: border-box;
-    min-width: 120px;
+    min-width: clamp(96px, 8vw, 128px);
     min-height: 52px;
     display: inline-flex;
+    flex: 1 0 clamp(96px, 8vw, 128px);
     align-items: center;
     justify-content: center;
     text-align: center;
     line-height: 1.1;
+    white-space: normal;
 }
 
 .menu-btn::before {
@@ -64,13 +66,24 @@ body {
     left: 100%;
 }
 
-.menu-btn:hover {
+.menu-btn:hover,
+.menu-btn--active {
     background: linear-gradient(145deg, #ff9f68, #ffb088);
     box-shadow: 0 8px 25px rgba(255, 159, 104, 0.4);
 }
 
-.menu-btn:active {
+.menu-btn:active,
+.menu-btn--active:active {
     box-shadow: 0 4px 15px rgba(255, 159, 104, 0.3);
+}
+
+.menu-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.menu-container::-webkit-scrollbar-thumb {
+    background: rgba(46, 125, 50, 0.35);
+    border-radius: 999px;
 }
 
 .page-header-row {

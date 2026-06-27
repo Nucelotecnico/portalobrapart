@@ -25,7 +25,7 @@ function ativarBotaoCabecalho() {
   if (botaoId) {
     const botao = document.getElementById(botaoId);
     if (botao) {
-      botao.style.background = 'linear-gradient(145deg, #ff9f68, #ffb088)';
+      botao.classList.add('menu-btn--active');
     }
   }
 }
