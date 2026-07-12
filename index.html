@@ -1,91 +1,1605 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Portal Part</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="index.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VCTE — Verificação de Conformidade Técnica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1A3A1A;--blue-deep:#2D5A2D;--blue-elec:#3A8A3A;
+  --blue-light:#F0FAF0;--white:#FFFFFF;--amber:#E8B900;
+  --green:#2E7D32;--green-mid:#4CAF50;--green-light:#A5D6A7;
+  --red:#C0392B;--gray:#6B7280;--gray-light:#E5E7EB;
+  --gray-border:#D1D5DB;--text:#111827;--text-sub:#4B5563;
+  --sidebar-w:280px;--radius:10px;
+  --shadow:0 1px 4px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+}
+html,body{height:100%;font-family:'Inter',sans-serif;background:var(--blue-light);color:var(--text)}
+button{cursor:pointer;font-family:inherit}
+input,textarea,select{font-family:inherit}
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:var(--sidebar-w);background:var(--navy);height:100vh;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sidebar-header{border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-header-wave{background:linear-gradient(135deg,#2D5A2D 0%,#3A8A3A 100%);padding:22px 20px 18px}
+.sidebar-logo{font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:2.5px;text-transform:uppercase;margin-bottom:6px}
+.sidebar-logo-cemig{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px;font-style:italic}
+.sidebar-logo-cemig span{color:var(--green-light)}
+.sidebar-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.8);margin-top:8px}
+.sidebar-sub{font-size:11px;color:rgba(255,255,255,.4);padding:8px 20px 14px}
+.steps-nav{padding:24px 20px;flex:1;position:relative}
+.steps-line{position:absolute;left:39px;top:36px;bottom:36px;width:2px;background:rgba(255,255,255,.1)}
+.steps-line-fill{position:absolute;left:0;top:0;width:100%;background:var(--green-mid);transition:height .4s ease}
+.step-item{display:flex;align-items:flex-start;gap:14px;padding:5px 0;cursor:pointer;position:relative;z-index:1}
+.step-dot{width:20px;height:20px;border-radius:50%;flex-shrink:0;border:2px solid rgba(255,255,255,.2);background:var(--navy);display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:2px}
+.step-item.done .step-dot{background:var(--green-mid);border-color:var(--green-mid)}
+.step-item.active .step-dot{background:var(--amber);border-color:var(--amber);box-shadow:0 0 0 4px rgba(232,185,0,.2)}
+.step-dot svg{display:none}.step-item.done .step-dot svg{display:block}
+.step-label{font-size:12px;color:rgba(255,255,255,.4);line-height:1.3;transition:color .2s;padding:2px 0}
+.step-num{font-size:10px;color:rgba(255,255,255,.25);display:block;margin-bottom:1px;font-family:'JetBrains Mono'}
+.step-item.active .step-label{color:#fff;font-weight:600}
+.step-item.done .step-label{color:rgba(255,255,255,.65)}
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08)}
+.btn-list{width:100%;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.8);border-radius:8px;padding:10px;font-size:13px;font-weight:500;transition:background .15s}
+.btn-list:hover{background:rgba(255,255,255,.12)}
+#main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.main-header{background:#fff;border-bottom:1px solid var(--gray-light);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.main-header h2{font-size:17px;font-weight:700;color:var(--navy)}
+.step-counter{font-size:12px;color:var(--gray);font-family:'JetBrains Mono'}
+.main-content{padding:28px 32px;flex:1;max-width:960px}
+.card{background:#fff;border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);margin-bottom:18px}
+.card-title{font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.8px;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.card-title::after{content:'';flex:1;height:1px;background:var(--gray-light)}
+.field-grid{display:grid;gap:14px}
+.field-grid.cols-2{grid-template-columns:1fr 1fr}
+.field-grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+.field-group{display:flex;flex-direction:column;gap:5px}
+.field-group label{font-size:11px;font-weight:600;color:var(--text-sub)}
+.field-group input,.field-group select,.field-group textarea{border:1.5px solid var(--gray-border);border-radius:8px;padding:9px 11px;font-size:13px;color:var(--text);background:#fff;transition:border-color .15s}
+.field-group input:focus,.field-group select:focus,.field-group textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(46,125,50,.1)}
+.field-group.mono input{font-family:'JetBrains Mono';font-size:12px}
+.field-group textarea{resize:vertical;min-height:110px;line-height:1.6}
+.radio-group{display:flex;flex-wrap:wrap;gap:10px}
+.radio-btn{display:flex;align-items:center;gap:8px;padding:8px 14px;border:1.5px solid var(--gray-border);border-radius:8px;cursor:pointer;font-size:13px;transition:all .15s;user-select:none}
+.radio-btn input{display:none}
+.radio-btn.active{border-color:var(--green);background:var(--blue-light);color:var(--green);font-weight:600}
+.radio-dot{width:13px;height:13px;border-radius:50%;border:2px solid var(--gray-border);transition:all .15s;flex-shrink:0}
+.radio-btn.active .radio-dot{border-color:var(--green);background:var(--green);box-shadow:inset 0 0 0 2px #fff}
+.result-select{display:flex;gap:12px;flex-wrap:wrap}
+.result-card{border:2px solid var(--gray-border);border-radius:10px;padding:14px 22px;cursor:pointer;font-weight:700;font-size:14px;transition:all .2s}
+.result-card.atende.active{border-color:var(--green);background:#F0FFF6;color:var(--green)}
+.result-card.nao-atende.active{border-color:var(--red);background:#FFF0F0;color:var(--red)}
+.dyn-table{width:100%;border-collapse:collapse;margin-bottom:10px}
+.dyn-table th{background:var(--blue-light);color:var(--blue-deep);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 10px;text-align:left;border-bottom:2px solid var(--green-light)}
+.dyn-table td{padding:7px 8px;border-bottom:1px solid var(--gray-light);vertical-align:middle}
+.dyn-table td input,.dyn-table td select{width:100%;border:1px solid transparent;border-radius:4px;padding:5px 7px;font-size:12px;background:transparent;font-family:inherit}
+.dyn-table td input:focus,.dyn-table td select:focus{border-color:var(--green);background:#fff;outline:none}
+.dyn-table td.mono input{font-family:'JetBrains Mono';font-size:11px}
+.btn-remove-row{background:none;border:none;color:#ccc;font-size:15px;padding:3px 7px;transition:color .15s}
+.btn-remove-row:hover{color:var(--red)}
+.btn-add-row{background:none;border:1.5px dashed var(--gray-border);border-radius:7px;padding:8px 14px;font-size:12px;color:var(--gray);transition:all .15s;margin-top:4px;display:inline-flex;align-items:center;gap:6px}
+.btn-add-row:hover{border-color:var(--green);color:var(--green)}
+.equipe-card{background:#fff;border:1.5px solid var(--gray-border);border-radius:10px;margin-bottom:14px;overflow:hidden}
+.equipe-header{background:var(--blue-light);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--green-light)}
+.equipe-header h4{font-size:13px;font-weight:700;color:var(--blue-deep)}
+.btn-remove-equipe{background:none;border:none;color:#ccc;font-size:17px;transition:color .15s}
+.btn-remove-equipe:hover{color:var(--red)}
+.equipe-body{padding:18px}
+.equipe-veiculo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.equipe-section-label{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--gray-light)}
+.btn-add-equipe{width:100%;background:none;border:2px dashed var(--green);border-radius:10px;padding:14px;font-size:13px;color:var(--green);font-weight:600;transition:background .15s;margin-top:8px}
+.btn-add-equipe:hover{background:var(--blue-light)}
+/* Fotos */
+.fotos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.foto-item{position:relative}
+.foto-box{border:2px dashed var(--gray-border);border-radius:10px;aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;background:#FAFAFA}
+.foto-box:hover{border-color:var(--green);background:var(--blue-light)}
+.foto-box img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.foto-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;opacity:0;transition:opacity .2s;font-size:12px;gap:6px}
+.foto-box:hover .foto-overlay{opacity:1}
+.foto-label-input{width:100%;margin-top:6px;border:1.5px solid var(--gray-border);border-radius:6px;padding:6px 8px;font-size:12px;font-weight:600;color:var(--text)}
+.foto-label-input:focus{outline:none;border-color:var(--green)}
+.btn-remove-foto{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);border:none;color:#fff;border-radius:50%;width:24px;height:24px;font-size:14px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.foto-item:hover .btn-remove-foto{opacity:1}
+input[type=file]{display:none}
+/* Documentação obrigatória */
+.doc-table{width:100%;border-collapse:collapse}
+.doc-table th{background:var(--green);color:#fff;font-size:10px;font-weight:700;text-transform:uppercase;padding:8px 10px;text-align:left}
+.doc-table th.center{text-align:center;width:60px}
+.doc-table td{padding:10px;border-bottom:1px solid var(--gray-light);font-size:12px;vertical-align:top}
+.doc-table tr:nth-child(even) td{background:var(--blue-light)}
+.doc-table td.item-num{font-weight:700;color:var(--green);width:36px;text-align:center}
+.doc-table td.item-doc{font-weight:700;color:var(--text);width:160px}
+.doc-table td.item-desc{color:var(--text-sub);line-height:1.5}
+.doc-table td.item-status{text-align:center;vertical-align:middle}
+.status-toggle{display:flex;gap:6px;justify-content:center}
+.status-btn{border:1.5px solid var(--gray-border);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;background:none;transition:all .15s;cursor:pointer}
+.status-btn.c.active{border-color:var(--green);background:#E8FFF3;color:var(--green)}
+.status-btn.nc.active{border-color:var(--red);background:#FFE8E8;color:var(--red)}
+/* Nav */
+.nav-footer{padding:20px 32px;border-top:1px solid var(--gray-light);background:#fff;display:flex;align-items:center;justify-content:space-between;position:sticky;bottom:0}
+.btn-back{background:none;border:1.5px solid var(--gray-border);border-radius:8px;padding:9px 18px;font-size:13px;font-weight:500;color:var(--text-sub);transition:all .15s}
+.btn-back:hover{border-color:var(--navy);color:var(--navy)}
+.btn-next{background:var(--green);color:#fff;border:none;border-radius:8px;padding:10px 26px;font-size:13px;font-weight:600;transition:background .15s;display:flex;align-items:center;gap:8px}
+.btn-next:hover{background:#1B5E20}
+.btn-generate{background:var(--green);color:#fff;border:none;border-radius:8px;padding:10px 26px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.progress-info{font-size:11px;color:var(--gray);text-align:center}
+/* Modal */
+#modal-overlay{position:fixed;inset:0;background:rgba(10,22,40,.7);z-index:500;display:none;align-items:center;justify-content:center}
+#modal-overlay.open{display:flex}
+.modal-box{background:#fff;border-radius:16px;max-width:780px;width:95%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-header{padding:18px 26px;border-bottom:1px solid var(--gray-light);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:16px;font-weight:700;color:var(--navy)}
+.btn-close{background:none;border:none;font-size:22px;color:var(--gray);transition:color .15s;cursor:pointer}
+.modal-body{overflow-y:auto;padding:18px 26px;flex:1}
+.report-list-item{border:1.5px solid var(--gray-border);border-radius:10px;padding:14px 18px;margin-bottom:10px;transition:all .15s;display:flex;align-items:center;justify-content:space-between}
+.report-list-item:hover{border-color:var(--green);background:var(--blue-light)}
+.report-list-item .info h4{font-size:13px;font-weight:700;color:var(--navy)}
+.report-list-item .info p{font-size:11px;color:var(--gray);margin-top:2px;font-family:'JetBrains Mono'}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.badge.atende{background:#E8FFF3;color:var(--green)}
+.badge.nao-atende{background:#FFE8E8;color:var(--red)}
+.badge.rascunho{background:#FFF8E1;color:#B45309}
+.report-actions{display:flex;gap:8px;align-items:center}
+.btn-sm{padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;border:none;transition:all .15s;cursor:pointer}
+.btn-sm.outline{background:none;border:1.5px solid var(--gray-border);color:var(--text-sub)}
+.btn-sm.outline:hover{border-color:var(--green);color:var(--green)}
+.btn-sm.danger{background:#FFE8E8;color:var(--red)}
+.btn-sm.primary{background:var(--green);color:#fff}
+/* Import xlsx */
+.import-box{border:2px dashed var(--green);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:background .15s;margin-bottom:16px}
+.import-box:hover{background:var(--blue-light)}
+.import-box p{font-size:13px;color:var(--green);font-weight:600;margin-top:8px}
+.import-box span{font-size:11px;color:var(--gray)}
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;transform:translateY(80px);opacity:0;transition:all .25s;z-index:9999;max-width:320px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.success{background:var(--green)}
+#toast.error{background:var(--red)}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:768px){#sidebar{display:none}.main-content{padding:16px}.field-grid.cols-2,.field-grid.cols-3{grid-template-columns:1fr}.equipe-veiculo{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo-container">
-            <div class="icon-wrapper">
-                <svg class="transformer-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Engrenagem externa -->
-                    <g id="gear">
-                        <!-- Dentes da engrenagem -->
-                        <path d="M 32 8 L 34 12 L 36 8 L 38 12 L 40 8 L 42 12 L 44 10 L 46 16 L 48 14 L 50 20 L 51 19 L 52 24 L 52 26 L 51 31 L 50 30 L 48 36 L 46 34 L 44 40 L 42 38 L 40 42 L 38 38 L 36 42 L 34 38 L 32 42 L 30 38 L 28 42 L 26 38 L 24 40 L 22 34 L 20 36 L 18 30 L 16 31 L 14 26 L 14 24 L 16 19 L 18 20 L 20 14 L 22 16 L 24 10 L 26 12 L 28 8 L 30 12 Z" 
-                              fill="#d4fa00" stroke="#a8cc00" stroke-width="1"/>
-                        
-                        <!-- Círculo interno da engrenagem -->
-                        <circle cx="32" cy="25" r="12" fill="#0a4d2e" stroke="#d4fa00" stroke-width="2"/>
-                        <circle cx="32" cy="25" r="9" fill="#1a7a4a"/>
-                    </g>
-                    
-                    <!-- Raio elétrico central -->
-                    <g id="lightning">
-                        <path d="M 35 16 L 28 26 L 32 26 L 29 36 L 38 24 L 34 24 Z" 
-                              fill="#d4fa00" stroke="#fff" stroke-width="0.5" opacity="0.95">
-                            <animate attributeName="opacity" values="0.95;1;0.95" dur="2s" repeatCount="indefinite"/>
-                        </path>
-                        <!-- Brilho interno do raio -->
-                        <path d="M 34 18 L 30 25 L 32 25 L 30 32 L 36 25 L 34 25 Z" 
-                              fill="#fff" opacity="0.6">
-                            <animate attributeName="opacity" values="0.6;0.9;0.6" dur="2s" repeatCount="indefinite"/>
-                        </path>
-                    </g>
-                    
-                    <!-- Partículas de energia ao redor -->
-                    <circle cx="18" cy="18" r="1.5" fill="#d4fa00" opacity="0.7">
-                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" begin="0s"/>
-                    </circle>
-                    <circle cx="46" cy="18" r="1.5" fill="#d4fa00" opacity="0.7">
-                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" begin="0.5s"/>
-                    </circle>
-                    <circle cx="16" cy="32" r="1.5" fill="#d4fa00" opacity="0.7">
-                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" begin="1s"/>
-                    </circle>
-                    <circle cx="48" cy="32" r="1.5" fill="#d4fa00" opacity="0.7">
-                        <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" begin="0.3s"/>
-                    </circle>
-                    
-                    <!-- Detalhe central -->
-                    <circle cx="32" cy="25" r="3" fill="#d4fa00" opacity="0.8"/>
-                    <circle cx="32" cy="25" r="1.5" fill="#fff" opacity="0.9">
-                        <animate attributeName="r" values="1.5;2;1.5" dur="2s" repeatCount="indefinite"/>
-                    </circle>
-                </svg>
-            </div>
-            <h2>PORTAL<br>PART</h2>
-        </div>
-        <p class="subtitle">Faça login para acessar o sistema</p>
-        <div id="mensagem-erro"></div>
-        <form id="formLogin">
-            <div class="form-group">
-                <label for="usuario">Email</label>
-                <div class="input-wrapper">
-                    <input type="email" id="usuario" required placeholder="seu.email@exemplo.com" autocomplete="email">
-                    <span class="input-icon">📧</span>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="senha">Senha</label>
-                <div class="input-wrapper">
-                    <input type="password" id="senha" required placeholder="••••••••" autocomplete="current-password">
-                    <span class="input-icon">🔒</span>
-                </div>
-            </div>
-            <button type="submit" id="btnLogin">Entrar</button>
-        </form>
+<div id="app">
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-header-wave">
+        <div class="sidebar-logo">CEMIG DISTRIBUIÇÃO S.A.</div>
+        <div class="sidebar-logo-cemig"><span>C</span>EMIG</div>
+        <div class="sidebar-title">Verificação de Conformidade Técnica</div>
+      </div>
+      <div class="sidebar-sub" id="vcte-subtitle">Novo relatório</div>
     </div>
+    <div class="steps-nav">
+      <div class="steps-line"><div class="steps-line-fill" id="steps-progress-bar"></div></div>
+      <div id="steps-list"></div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-list" onclick="openModal()">📋 Meus relatórios</button>
+    </div>
+  </div>
+  <div id="main">
+    <div class="main-header">
+      <h2 id="step-title">Identificação do Relatório</h2>
+      <span class="step-counter" id="step-counter">Etapa 1 de 11</span>
+    </div>
+    <div class="main-content" id="step-content"></div>
+    <div class="nav-footer">
+      <button class="btn-back" id="btn-back" onclick="prevStep()">← Voltar</button>
+      <div class="progress-info" id="progress-info">Rascunho salvo automaticamente</div>
+      <button class="btn-next" id="btn-next" onclick="nextStep()">Próximo →</button>
+    </div>
+  </div>
+</div>
+<div id="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>📋 Meus Relatórios</h3>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+        <button class="btn-sm primary" onclick="newReport();closeModal()">+ Novo relatório</button>
+      </div>
+      <div id="reports-list"></div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+// ===== INDEXEDDB — suporte a fotos e laudos em PDF sem limite de 5MB =====
+const DB_NAME='vcte_db', DB_VERSION=1, STORE='relatorios';
+let _db=null;
 
-    <script src="supabase-config.js"></script>
-    <script src="index.js"></script>
+function dbOpen(){
+  return new Promise((res,rej)=>{
+    if(_db)return res(_db);
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=e=>{
+      const db=e.target.result;
+      if(!db.objectStoreNames.contains(STORE))
+        db.createObjectStore(STORE,{keyPath:'id'});
+    };
+    req.onsuccess=e=>{_db=e.target.result;res(_db)};
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+async function dbGetAll(){
+  const db=await dbOpen();
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(STORE,'readonly');
+    const req=tx.objectStore(STORE).getAll();
+    req.onsuccess=()=>res(req.result||[]);
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+async function dbGet(id){
+  const db=await dbOpen();
+  return new Promise((res,rej)=>{
+    const req=db.transaction(STORE,'readonly').objectStore(STORE).get(id);
+    req.onsuccess=()=>res(req.result||null);
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+async function dbUpsert(record){
+  const db=await dbOpen();
+  return new Promise((res,rej)=>{
+    const req=db.transaction(STORE,'readwrite').objectStore(STORE).put(record);
+    req.onsuccess=()=>res();
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+async function dbDelete(id){
+  const db=await dbOpen();
+  return new Promise((res,rej)=>{
+    const req=db.transaction(STORE,'readwrite').objectStore(STORE).delete(id);
+    req.onsuccess=()=>res();
+    req.onerror=e=>rej(e.target.error);
+  });
+}
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
 
+window.addEventListener('DOMContentLoaded',async()=>{
+  await dbOpen();
+  renderSidebar();renderStep();
+});
 
+// ===== STATE =====
+let currentStep=0,currentReportId=null,saveTimer=null;
+
+const DOC_ITEMS=[
+  {num:1,doc:'Ficha de Registro e CTPS - para compor dossiê do funcionário',desc:'Entregar Xerox legível e documento original para fins de autenticação. Ficha de registro, Carteira de Trabalho e Previdência Social com cópia das seguintes partes: Identificação, contrato de trabalho e anotação que comprove experiência profissional.'},
+  {num:2,doc:'Relação de todos os Empregados DA EMPRESA e Relação de Empregados que compõe a Equipe de obras do PART',desc:'Deve ser em papel timbrado com a relação nominal dos empregados que trabalharão durante o mês, indicando nomes, cargos/função, CPF e número da CTPS.'},
+  {num:3,doc:'Responsável Técnico',desc:'Entregar cópia legível e apresentar documento original para fins de autenticação ou documento autenticado em cartório. Responsável Técnico - RT.'},
+  {num:4,doc:'Registro junto ao conselho de classe competente (CREA/CFT)',desc:'Entregar cópia legível e apresentar documento original para fins de autenticação ou documento autenticado em cartório ou cópia do registro quando CFT. Anotação de Responsabilidade Técnica - ART, devidamente preenchido e assinada, conforme CONFEA e CREA e com detalhamento dos serviços prestados. No caso do CFT, apresentar o Termo de Responsabilidade Técnica - TRT.'},
+  {num:5,doc:'Certificados dos treinamentos exigidos por função, conforme discriminado na Especificação Técnica ET-VCTE-GM-0832 e "Matriz de Treinamento" – UNIVERCEMIG.',desc:'Entregar cópia legível e apresentar documentos originais para fins de autenticação.'},
+  {num:6,doc:'ART SSO & BE',desc:'Entregar copia legível e apresentar documento original para fins de autenticação ou documento autenticado em cartório. Anotação de Responsabilidade Técnica - ART, devidamente preenchido, assinado e com guia de pagamento (CREA).ART conforme CONFEA e CREA; detalhamento dos serviços relativos à Segurança e Saúde Ocupacional e Bem Estar – SSO & BE.'},
+  {num:7,doc:'Relação de Veículos',desc:'Entregar copia legível e apresentar documento original para fins de autenticação ou documento autenticado em cartório. O documento deve ser em papel timbrado, com a relação dos veículos com marca, modelo, ano de fabricação, placa e numero de frota. Nos caminhões com cabine auxiliar para transporte de passageiros e guindauto, essas informações deverão constar no CRLV do veículo.'},
+  {num:8,doc:'CRLV - Certificado de Registro e Licenciamento de Veículos / DUT',desc:'Entregar cópia legível e apresentar documento original para fins de autenticação ou documento autenticado em cartório. Caso o veículo possua cabine auxiliar e equipamento de guindar, estes deverão estar previstos no documento do veículo.'},
+  {num:9,doc:'Documento comprobatório das manutenções preventivas realizadas no equipamento guindauto',desc:'Xerox legível e documento original para fins de autenticação. Com a periodicidade anual. Deverá ser assinado por Engenheiro Mecânico.'},
+  {num:10,doc:'Laudo comprobatório dos ensaios/inspeções dos cestos acoplados e cestas aéreas exigidos na NR-12 e IT-SESMT-guindauto 4.5.1-003',desc:'Xerox legível e documento original para fins de autenticação.'},
+  {num:11,doc:'Anexos 01 a 06',desc:'Todos os anexos mencionados devem estar devidamente preenchidos e assinados.'}
+];
+
+const DEFAULT_DATA={
+  razao_social:'',cnpj:'',numero_vcte:'',ano:new Date().getFullYear().toString(),
+  data_inspecao:'',data_relatorio:'',
+  endereco:'',pessoa_contato:'',telefone:'',email:'',
+  tipo_avaliacao:'habilitacao',grupo:'0832',
+  num_uebs:'',resultado:'ATENDE',
+  fotos:[{legenda:'Fachada',src:null},{legenda:'Almoxarifado',src:null}],
+  equipe_estrutural:[
+    {nome:'',funcao:'Engenheiro Eletricista',cpf:'',ctps:''},
+    {nome:'',funcao:'Téc. Segurança Trabalho',cpf:'',ctps:''},
+    {nome:'',funcao:'Biólogo ou Eng. Agrônomo ou Eng. Florestal ou Técnico em Silvicultura',cpf:'',ctps:''},
+    {nome:'',funcao:'Auxiliar de Escritório e Controlador de Documentos',cpf:'',ctps:''},
+    {nome:'',funcao:'Supervisor (por Base Operativa)',cpf:'',ctps:''},
+    {nome:'',funcao:'Diretor Administrativo',cpf:'',ctps:''},
+    {nome:'',funcao:'Responsável Técnico',cpf:'',ctps:''},
+    {nome:'',funcao:'Responsável por solicitação de manobras. (GDIS PM)',cpf:'',ctps:''}
+  ],
+  equipes_campo:[newEquipe(1)],
+  doc_status:DOC_ITEMS.map(()=>''),
+  doc_obs:'',
+  observacoes:'',
+  // Ferramentas
+  fotos_ferramentas:[],
+  obs_ferramental:'',
+  // Veículos
+  veiculos_apoio:[{modelo:'',equipe:'APOIO',placa:'',ano:'',fotos:[]}],
+  desc_veiculos_obs:'',
+  // Obs Gerais VCTE
+  obs_vcte:'',
+  // Laudo Guindauto
+  laudos_guindauto:[],
+  // Conclusão/Assinaturas
+  conclusao:'',
+  equipe_envolvida:[{nome:'',regional:''}],
+  responsavel_cemig:'',responsavel_empresa:''
+};
+
+function newEquipe(n){
+  return{num:n,placa:'',ano_veiculo:'',marca:'',modelo:'',locado:'NÃO',
+    fab_cab:'',ano_cab:'',fab_guindauto:'',ano_guindauto:'',fab_cesto:'NÃO SE APLICA',
+    membros:[
+      {nome:'',funcao:'Encarregado',cpf:'',ctps:''},
+      {nome:'',funcao:'Instalador',cpf:'',ctps:''},
+      {nome:'',funcao:'Instalador',cpf:'',ctps:''},
+      {nome:'',funcao:'Instalador',cpf:'',ctps:''},
+      {nome:'',funcao:'Ajudante',cpf:'',ctps:''},
+      {nome:'',funcao:'Ajudante',cpf:'',ctps:''},
+      {nome:'',funcao:'Motorista',cpf:'',ctps:''}
+    ]};
+}
+
+let formData=JSON.parse(JSON.stringify(DEFAULT_DATA));
+
+const STEPS=[
+  {title:'Identificação do Relatório',label:'Identificação'},
+  {title:'Informações Cadastrais',label:'Cadastro'},
+  {title:'Dados da Avaliação',label:'Avaliação'},
+  {title:'Resultado da Avaliação',label:'Resultado'},
+  {title:'Apresentação da Empresa',label:'Fotos Empresa'},
+  {title:'5.0 Informações sobre Equipe e Veículos',label:'Equipes'},
+  {title:'Documentação Obrigatória VCTE-GM-0832',label:'Documentação'},
+  {title:'Observações Gerais',label:'Observações'},
+  {title:'7.0 Ferramentas e Calibração',label:'Ferramentas'},
+  {title:'8.0 Veículos',label:'Veículos'},
+  {title:'Observações Gerais da VCTE',label:'Obs. VCTE'},
+  {title:'8.3 Laudo Técnico do Guindauto',label:'Laudo Guindauto'},
+  {title:'Conclusão',label:'Conclusão'},
+  {title:'Equipe Responsável & Assinaturas',label:'Assinaturas'}
+];
+
+function renderSidebar(){
+  document.getElementById('steps-list').innerHTML=STEPS.map((s,i)=>`
+    <div class="step-item ${i<currentStep?'done':''} ${i===currentStep?'active':''}" onclick="goToStep(${i})">
+      <div class="step-dot">
+        <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.5 2.5L9 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="step-label"><span class="step-num">Etapa ${i+1}</span>${s.label}</div>
+    </div>`).join('');
+  const pct=currentStep/(STEPS.length-1)*100;
+  document.getElementById('steps-progress-bar').style.height=pct+'%';
+  document.getElementById('vcte-subtitle').textContent=formData.razao_social?formData.razao_social.substring(0,26):'Novo relatório';
+  document.getElementById('step-title').textContent=STEPS[currentStep].title;
+  document.getElementById('step-counter').textContent=`Etapa ${currentStep+1} de ${STEPS.length}`;
+  document.getElementById('btn-back').style.visibility=currentStep===0?'hidden':'visible';
+  const bn=document.getElementById('btn-next');
+  if(currentStep===STEPS.length-1){bn.className='btn-generate';bn.innerHTML='📄 Gerar PDF';bn.onclick=generatePDF}
+  else{bn.className='btn-next';bn.innerHTML='Próximo →';bn.onclick=nextStep}
+}
+
+function goToStep(i){collectCurrentStep();currentStep=i;renderSidebar();renderStep();document.getElementById('main').scrollTo(0,0)}
+
+function renderStep(){
+  const c=document.getElementById('step-content');
+  c.innerHTML='';
+  [renderStep1,renderStep2,renderStep3,renderStep4,renderStep5,
+   renderStep6,renderStep7,renderStep8,renderStep9,renderStep10,
+   renderStep10b,renderStep11,renderStep12,renderStep13][currentStep](c);
+}
+
+// STEP 1
+function renderStep1(c){
+  c.innerHTML=`<div class="card">
+  <div class="card-title">Dados do Relatório</div>
+  <div class="field-grid cols-3" style="margin-bottom:14px">
+    <div class="field-group" style="grid-column:span 3">
+      <label>Razão Social da Empresa Verificada</label>
+      <input type="text" id="razao_social" value="${esc(formData.razao_social)}" placeholder="Nome completo da empresa">
+    </div>
+    <div class="field-group mono"><label>CNPJ</label><input type="text" id="cnpj" value="${esc(formData.cnpj)}" placeholder="00.000.000/0001-00" maxlength="18"></div>
+    <div class="field-group mono"><label>N° VCTE</label><input type="text" id="numero_vcte" value="${esc(formData.numero_vcte)}" placeholder="2"></div>
+    <div class="field-group mono"><label>Ano</label><input type="text" id="ano" value="${esc(formData.ano)}" placeholder="2026"></div>
+  </div>
+  <div class="field-grid cols-2">
+    <div class="field-group"><label>Data da Inspeção</label><input type="date" id="data_inspecao" value="${esc(formData.data_inspecao)}"></div>
+    <div class="field-group"><label>Data do Relatório</label><input type="date" id="data_relatorio" value="${esc(formData.data_relatorio)}"></div>
+  </div></div>`;
+  const el=document.getElementById('cnpj');
+  if(el)el.addEventListener('input',function(){
+    let v=this.value.replace(/\D/g,'').substring(0,14);
+    if(v.length>12)v=v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2}).*/,'$1.$2.$3/$4-$5');
+    else if(v.length>8)v=v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4}).*/,'$1.$2.$3/$4');
+    else if(v.length>5)v=v.replace(/^(\d{2})(\d{3})(\d{3}).*/,'$1.$2.$3');
+    else if(v.length>2)v=v.replace(/^(\d{2})(\d{3}).*/,'$1.$2');
+    this.value=v;
+  });
+}
+
+// STEP 2
+function renderStep2(c){
+  c.innerHTML=`<div class="card">
+  <div class="card-title">Informações Cadastrais</div>
+  <div class="field-grid">
+    <div class="field-group"><label>Endereço Completo</label><input type="text" id="endereco" value="${esc(formData.endereco)}" placeholder="Rua/Av., nº, Complemento, Município/UF"></div>
+    <div class="field-group"><label>Pessoa de Contato</label><input type="text" id="pessoa_contato" value="${esc(formData.pessoa_contato)}" placeholder="Nome completo"></div>
+    <div class="field-grid cols-2">
+      <div class="field-group mono"><label>Telefone</label><input type="text" id="telefone" value="${esc(formData.telefone)}" placeholder="(31) 99999-9999"></div>
+      <div class="field-group"><label>E-mail</label><input type="email" id="email" value="${esc(formData.email)}" placeholder="contato@empresa.com.br"></div>
+    </div>
+  </div></div>`;
+}
+
+// STEP 3
+function renderStep3(c){
+  c.innerHTML=`<div class="card">
+  <div class="card-title">Tipo de Avaliação</div>
+  <div class="radio-group" id="tipo-avaliacao">
+    <label class="radio-btn ${formData.tipo_avaliacao==='habilitacao'?'active':''}"><input type="radio" name="tipo" value="habilitacao" ${formData.tipo_avaliacao==='habilitacao'?'checked':''}><span class="radio-dot"></span> Habilitação Cadastral Inicial</label>
+    <label class="radio-btn ${formData.tipo_avaliacao==='reavaliacao'?'active':''}"><input type="radio" name="tipo" value="reavaliacao" ${formData.tipo_avaliacao==='reavaliacao'?'checked':''}><span class="radio-dot"></span> Reavaliação</label>
+  </div></div>
+  <div class="card">
+  <div class="card-title">Grupo de Trabalho</div>
+  <div class="radio-group" id="grupo-avaliacao">
+    <label class="radio-btn ${formData.grupo==='0832'?'active':''}"><input type="radio" name="grupo" value="0832" ${formData.grupo==='0832'?'checked':''}><span class="radio-dot"></span> Grupo 0832 — PART REDES / CONSTRUÇÃO</label>
+    <label class="radio-btn ${formData.grupo==='0833'?'active':''}"><input type="radio" name="grupo" value="0833" ${formData.grupo==='0833'?'checked':''}><span class="radio-dot"></span> Grupo 0833 — PART REDES / LINHA VIVA</label>
+  </div></div>`;
+  c.querySelectorAll('.radio-btn').forEach(btn=>btn.addEventListener('click',function(){
+    const inp=this.querySelector('input'),nm=inp.name;
+    c.querySelectorAll(`.radio-btn input[name="${nm}"]`).forEach(i=>i.closest('.radio-btn').classList.remove('active'));
+    this.classList.add('active');
+  }));
+}
+
+// STEP 4
+function renderStep4(c){
+  c.innerHTML=`<div class="card">
+  <div class="card-title">Unidades de Equipes de Base (UEB's)</div>
+  <div class="field-group" style="max-width:280px">
+    <label>Quantidade de UEB's (ex: 01 (UMA))</label>
+    <input type="text" id="num_uebs" value="${esc(formData.num_uebs)}" placeholder="01 (UMA)">
+  </div></div>
+  <div class="card">
+  <div class="card-title">Resultado da Avaliação</div>
+  <div class="result-select">
+    <div class="result-card atende ${formData.resultado==='ATENDE'?'active':''}" onclick="setResultado('ATENDE',this)">✓ ATENDE</div>
+    <div class="result-card nao-atende ${formData.resultado==='NÃO ATENDE'?'active':''}" onclick="setResultado('NÃO ATENDE',this)">✗ NÃO ATENDE</div>
+  </div></div>`;
+}
+function setResultado(v,el){formData.resultado=v;document.querySelectorAll('.result-card').forEach(r=>r.classList.remove('active'));el.classList.add('active')}
+
+// STEP 5 — Fotos com legendas editáveis e múltiplas fotos
+function renderStep5(c){
+  c.innerHTML=`<div class="card">
+  <div class="card-title">Apresentação da Empresa — Fotos</div>
+  <p style="font-size:12px;color:var(--gray);margin-bottom:16px">Edite as legendas, adicione ou remova fotos. As imagens aparecerão no PDF.</p>
+  <div class="fotos-grid" id="fotos-grid"></div>
+  <button class="btn-add-row" style="margin-top:12px" onclick="addFoto()">+ Adicionar foto</button>
+  <input type="file" id="foto-file-input" accept="image/*" onchange="onFotoFileChange(this)">
+  </div>`;
+  renderFotosGrid();
+}
+let _fotoTargetIdx=null;
+function renderFotosGrid(){
+  const grid=document.getElementById('fotos-grid');
+  if(!grid)return;
+  grid.innerHTML=formData.fotos.map((f,i)=>`
+    <div class="foto-item">
+      <div class="foto-box" onclick="triggerFotoUpload(${i})">
+        ${f.src?`<img src="${f.src}"><div class="foto-overlay">🔄 Trocar foto</div>`:`<span style="font-size:26px">📷</span><span style="font-size:12px;color:var(--gray);margin-top:6px">Clique para upload</span>`}
+      </div>
+      <button class="btn-remove-foto" onclick="removeFoto(${i},event)" title="Remover">✕</button>
+      <input class="foto-label-input" type="text" value="${esc(f.legenda)}" onchange="formData.fotos[${i}].legenda=this.value" placeholder="Legenda da foto">
+    </div>`).join('');
+}
+function triggerFotoUpload(i){_fotoTargetIdx=i;document.getElementById('foto-file-input').click()}
+function onFotoFileChange(inp){
+  const file=inp.files[0];if(!file||_fotoTargetIdx===null)return;
+  const reader=new FileReader();
+  reader.onload=e=>{formData.fotos[_fotoTargetIdx].src=e.target.result;renderFotosGrid();_fotoTargetIdx=null};
+  reader.readAsDataURL(file);inp.value='';
+}
+function addFoto(){formData.fotos.push({legenda:'',src:null});renderFotosGrid()}
+function removeFoto(i,e){e.stopPropagation();formData.fotos.splice(i,1);renderFotosGrid()}
+
+// STEP 6 — Equipes (Estrutural + Campo) com import xlsx
+function renderStep6(c){
+  c.innerHTML=`
+  <div class="card">
+    <div class="card-title">Importar via Excel (ANEXO 01)</div>
+    <div class="import-box" onclick="document.getElementById('xlsx-input').click()">
+      <span style="font-size:28px">📊</span>
+      <p>Clique para importar o ANEXO 01 preenchido</p>
+      <span>Formato: ANEXO-01-INFORMACOES-SOBRE-EQUIPE-E-VEICULOS.xlsx</span>
+    </div>
+    <input type="file" id="xlsx-input" accept=".xlsx,.xls" onchange="importXlsx(this)">
+    <p style="font-size:11px;color:var(--gray);text-align:center">— ou preencha manualmente abaixo —</p>
+  </div>
+  <div class="card">
+    <div class="card-title">Equipe Estrutural</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:14px">Informe os dados de cada função. Use "NÃO SE APLICA" quando necessário.</p>
+    <table class="dyn-table"><thead><tr><th style="width:30%">Nome</th><th>Função</th><th style="width:15%" class="mono">CPF</th><th style="width:12%" class="mono">CTPS</th><th style="width:36px"></th></tr></thead>
+    <tbody id="tbody-estrutural"></tbody></table>
+    <button class="btn-add-row" onclick="addMembroEstrutural()">+ Membro</button>
+  </div>
+  <div id="equipes-container"></div>
+  <button class="btn-add-equipe" onclick="addEquipe()">+ Adicionar Equipe de Campo</button>`;
+  renderTbodyEstrutural();renderEquipes();
+}
+
+function renderTbodyEstrutural(){
+  const tb=document.getElementById('tbody-estrutural');if(!tb)return;
+  tb.innerHTML=formData.equipe_estrutural.map((m,i)=>`<tr>
+    <td><input type="text" value="${esc(m.nome)}" onchange="formData.equipe_estrutural[${i}].nome=this.value" placeholder="Nome completo"></td>
+    <td><input type="text" value="${esc(m.funcao)}" onchange="formData.equipe_estrutural[${i}].funcao=this.value" placeholder="Função"></td>
+    <td class="mono"><input type="text" value="${esc(m.cpf)}" onchange="formData.equipe_estrutural[${i}].cpf=this.value" placeholder="000.000.000-00"></td>
+    <td class="mono"><input type="text" value="${esc(m.ctps)}" onchange="formData.equipe_estrutural[${i}].ctps=this.value" placeholder="CTPS"></td>
+    <td><button class="btn-remove-row" onclick="formData.equipe_estrutural.splice(${i},1);renderTbodyEstrutural()">✕</button></td>
+  </tr>`).join('');
+}
+function addMembroEstrutural(){formData.equipe_estrutural.push({nome:'',funcao:'',cpf:'',ctps:''});renderTbodyEstrutural()}
+
+function renderEquipes(){
+  const cont=document.getElementById('equipes-container');if(!cont)return;
+  cont.innerHTML=formData.equipes_campo.map((eq,ei)=>`
+    <div class="equipe-card">
+      <div class="equipe-header">
+        <h4>Equipe ${ei+1}</h4>
+        <button class="btn-remove-equipe" onclick="removeEquipe(${ei})">🗑</button>
+      </div>
+      <div class="equipe-body">
+        <p class="equipe-section-label">Dados do Veículo</p>
+        <div class="equipe-veiculo">
+          <div class="field-group mono"><label>Placa</label><input type="text" value="${esc(eq.placa)}" onchange="formData.equipes_campo[${ei}].placa=this.value" placeholder="KXW9I90" style="text-transform:uppercase"></div>
+          <div class="field-group mono"><label>Ano do Veículo</label><input type="text" value="${esc(eq.ano_veiculo)}" onchange="formData.equipes_campo[${ei}].ano_veiculo=this.value" placeholder="2017"></div>
+          <div class="field-group"><label>Marca</label><input type="text" value="${esc(eq.marca)}" onchange="formData.equipes_campo[${ei}].marca=this.value" placeholder="VW"></div>
+          <div class="field-group"><label>Modelo</label><input type="text" value="${esc(eq.modelo)}" onchange="formData.equipes_campo[${ei}].modelo=this.value" placeholder="17230 CRM 4X2 4P"></div>
+          <div class="field-group"><label>Veículo Locado?</label>
+            <select onchange="formData.equipes_campo[${ei}].locado=this.value">
+              <option ${eq.locado==='NÃO'?'selected':''}>NÃO</option>
+              <option ${eq.locado==='SIM'?'selected':''}>SIM</option>
+              <option ${eq.locado==='NAO'?'selected':''}>NAO</option>
+            </select></div>
+          <div class="field-group"><label>Fabricante Cab. Auxiliar</label><input type="text" value="${esc(eq.fab_cab)}" onchange="formData.equipes_campo[${ei}].fab_cab=this.value" placeholder="HERINGER IMPLEMENTOS"></div>
+          <div class="field-group mono"><label>Ano Fab./Nº Série Cab.</label><input type="text" value="${esc(eq.ano_cab)}" onchange="formData.equipes_campo[${ei}].ano_cab=this.value" placeholder="2025/MGOLY..."></div>
+          <div class="field-group"><label>Fabricante Guindauto/Modelo</label><input type="text" value="${esc(eq.fab_guindauto)}" onchange="formData.equipes_campo[${ei}].fab_guindauto=this.value" placeholder="PHD GUINDASTE/ 16005EX"></div>
+          <div class="field-group mono"><label>Ano Fab./Nº Série Guindauto</label><input type="text" value="${esc(eq.ano_guindauto)}" onchange="formData.equipes_campo[${ei}].ano_guindauto=this.value" placeholder="11/2017 SERIE 000431"></div>
+          <div class="field-group"><label>Fab. Cesto Acoplado</label><input type="text" value="${esc(eq.fab_cesto)}" onchange="formData.equipes_campo[${ei}].fab_cesto=this.value" placeholder="EC EQUIPAMENTOS"></div>
+        </div>
+        <p class="equipe-section-label">Componentes da Equipe</p>
+        <table class="dyn-table"><thead><tr><th>Nome</th><th>Função</th><th class="mono">CPF</th><th class="mono">CTPS</th><th style="width:36px"></th></tr></thead>
+        <tbody id="tbody-eq-${ei}"></tbody></table>
+        <button class="btn-add-row" onclick="addMembroCampo(${ei})">+ Membro</button>
+      </div>
+    </div>`).join('');
+  formData.equipes_campo.forEach((eq,ei)=>{
+    const tb=document.getElementById(`tbody-eq-${ei}`);
+    if(tb)tb.innerHTML=eq.membros.map((m,mi)=>`<tr>
+      <td><input type="text" value="${esc(m.nome)}" onchange="formData.equipes_campo[${ei}].membros[${mi}].nome=this.value"></td>
+      <td><input type="text" value="${esc(m.funcao)}" onchange="formData.equipes_campo[${ei}].membros[${mi}].funcao=this.value"></td>
+      <td class="mono"><input type="text" value="${esc(m.cpf)}" onchange="formData.equipes_campo[${ei}].membros[${mi}].cpf=this.value"></td>
+      <td class="mono"><input type="text" value="${esc(m.ctps)}" onchange="formData.equipes_campo[${ei}].membros[${mi}].ctps=this.value"></td>
+      <td><button class="btn-remove-row" onclick="removeMembroCampo(${ei},${mi})">✕</button></td>
+    </tr>`).join('');
+  });
+}
+function addEquipe(){formData.equipes_campo.push(newEquipe(formData.equipes_campo.length+1));renderEquipes()}
+function removeEquipe(i){if(formData.equipes_campo.length<=1){showToast('Mínimo de 1 equipe.');return}formData.equipes_campo.splice(i,1);renderEquipes()}
+function addMembroCampo(ei){formData.equipes_campo[ei].membros.push({nome:'',funcao:'',cpf:'',ctps:''});renderEquipes()}
+function removeMembroCampo(ei,mi){formData.equipes_campo[ei].membros.splice(mi,1);renderEquipes()}
+
+// Import XLSX
+function importXlsx(inp){
+  const file=inp.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      parseXlsxRows(rows);
+      renderTbodyEstrutural();renderEquipes();
+      showToast('Excel importado com sucesso! ✓','success');
+    }catch(err){showToast('Erro ao ler o arquivo: '+err.message,'error')}
+  };
+  reader.readAsArrayBuffer(file);inp.value='';
+}
+
+function parseXlsxRows(rows){
+  // Mapeamento exato confirmado via openpyxl:
+  // col[0]=id equipe, col[1]=rótulo, col[2]=valor_esq, col[3]=rótulo_dir, col[4]=valor_dir, col[5]=ctps
+  const s=v=>String(v==null?'':v).trim();
+
+  // Fornecedor (col[2])
+  for(let r=0;r<rows.length;r++){
+    if(s(rows[r][0]).includes('FORNECEDOR SOLICITANTE:')){
+      const v=s(rows[r][2]);
+      if(v&&!formData.razao_social)formData.razao_social=v;
+      break;
+    }
+  }
+
+  // Equipe Estrutural: col[1]=nome, col[3]=funcao, col[4]=cpf, col[5]=ctps
+  const estrutural=[];
+  let inEstr=false;
+  for(let r=0;r<rows.length;r++){
+    const c0=s(rows[r][0]);
+    if(c0==='EQUIPE ESTRUTURAL'){inEstr=true;continue}
+    if(inEstr&&/^EQUIPE\s+\d/i.test(c0))break;
+    if(inEstr){
+      const nome=s(rows[r][1]);
+      const funcao=s(rows[r][3]);
+      const cpf=s(rows[r][4]);
+      const ctps=s(rows[r][5]);
+      if(nome&&funcao&&funcao!=='Função')
+        estrutural.push({nome,funcao,cpf,ctps});
+    }
+  }
+  if(estrutural.length>0)formData.equipe_estrutural=estrutural;
+
+  // Equipes de Campo: col[2]=valor_esq, col[4]=valor_dir em cada linha do bloco
+  const equipes=[];const seen=new Set();
+  for(let r=0;r<rows.length;r++){
+    const c0=s(rows[r][0]);
+    const m=c0.match(/^EQUIPE\s+(\d+)$/i);
+    if(!m)continue;
+    const num=parseInt(m[1]);
+    if(seen.has(num))continue;
+    seen.add(num);
+    const eq=newEquipe(num);
+    eq.placa         = s(rows[r]?.[2]);
+    eq.fab_cab       = s(rows[r]?.[4]);
+    eq.ano_veiculo   = s(rows[r+1]?.[2]);
+    eq.ano_cab       = s(rows[r+1]?.[4]);
+    eq.marca         = s(rows[r+2]?.[2]);
+    eq.fab_guindauto = s(rows[r+2]?.[4]);
+    eq.modelo        = s(rows[r+3]?.[2]);
+    eq.ano_guindauto = s(rows[r+3]?.[4]);
+    eq.locado        = s(rows[r+4]?.[2])||'NÃO';
+    eq.fab_cesto     = s(rows[r+4]?.[4])||'NÃO SE APLICA';
+    // Membros
+    for(let k=r+5;k<Math.min(r+25,rows.length);k++){
+      if(s(rows[k]?.[1]).toLowerCase().includes('componentes da equipe')){
+        const membros=[];
+        for(let m2=k+2;m2<rows.length;m2++){
+          const mr=rows[m2];
+          if(/^EQUIPE\s+\d/i.test(s(mr?.[0])))break;
+          const nome=s(mr?.[1]);const funcao=s(mr?.[3]);
+          const cpf=s(mr?.[4]);const ctps=s(mr?.[5]);
+          if(nome||funcao)membros.push({nome,funcao,cpf,ctps});
+        }
+        if(membros.length>0)eq.membros=membros;
+        break;
+      }
+    }
+    equipes.push(eq);
+  }
+  if(equipes.length>0)formData.equipes_campo=equipes;
+}
+
+// STEP 7 — Documentação Obrigatória
+function renderStep7(c){
+  if(!formData.doc_status||formData.doc_status.length!==DOC_ITEMS.length)
+    formData.doc_status=DOC_ITEMS.map(()=>'');
+  c.innerHTML=`<div class="card">
+  <div class="card-title">VCTE-GM-0832, REV. "I" 09/2022</div>
+  <p style="font-size:12px;color:var(--gray);margin-bottom:16px">Marque cada item como Conforme (C) ou Não Conforme (NC).</p>
+  <table class="doc-table">
+    <thead><tr><th style="width:36px">Item</th><th style="width:160px">Documento</th><th>Descrição e Especificações da Entrega</th><th class="center">C</th><th class="center">NC</th></tr></thead>
+    <tbody>${DOC_ITEMS.map((item,i)=>`<tr>
+      <td class="item-num">${item.num}</td>
+      <td class="item-doc">${item.doc}</td>
+      <td class="item-desc">${item.desc}</td>
+      <td class="item-status"><button class="status-btn c ${formData.doc_status[i]==='C'?'active':''}" onclick="setDocStatus(${i},'C',this)">C</button></td>
+      <td class="item-status"><button class="status-btn nc ${formData.doc_status[i]==='NC'?'active':''}" onclick="setDocStatus(${i},'NC',this)">NC</button></td>
+    </tr>`).join('')}</tbody>
+  </table>
+  <div class="field-group" style="margin-top:16px">
+    <label>Observações sobre a Documentação</label>
+    <textarea id="doc_obs" rows="3" placeholder="Observações adicionais sobre a documentação...">${esc(formData.doc_obs||'')}</textarea>
+  </div></div>`;
+}
+function setDocStatus(i,val,btn){
+  formData.doc_status[i]=formData.doc_status[i]===val?'':val;
+  document.querySelectorAll(`.status-btn`).forEach((b,bi)=>{});
+  // update only this row's buttons
+  const allBtns=document.querySelectorAll('.status-btn');
+  // find the pair for item i
+  document.querySelectorAll('tr').forEach(tr=>{
+    const btns=tr.querySelectorAll('.status-btn');
+    if(btns.length===2){
+      const idx=parseInt(btns[0].getAttribute('onclick').match(/\d+/)[0]);
+      if(idx===i){
+        btns[0].classList.toggle('active',formData.doc_status[i]==='C');
+        btns[1].classList.toggle('active',formData.doc_status[i]==='NC');
+      }
+    }
+  });
+}
+
+// STEP 8 — Observações
+function renderStep8(c){
+  const def=formData.observacoes||gerarObsDefault();
+  c.innerHTML=`<div class="card">
+  <div class="card-title">6.1 Observações</div>
+  <p style="font-size:12px;color:var(--gray);margin-bottom:14px">Texto pré-preenchido com modelo padrão. Edite conforme necessário.</p>
+  <div class="field-group"><label>Texto das Observações</label>
+  <textarea id="observacoes" rows="10">${esc(def)}</textarea></div></div>`;
+}
+function gerarObsDefault(){
+  return`Documentação analisada de forma digital, na pasta de documentação geral disponibilizada pela empresa através do programa Wetransfer, conforme a instrução VCTE-GM-0832 de revisão "I".`;
+}
+
+// STEP 9 — Ferramentas e Calibração
+function renderStep9(c){
+  if(!formData.fotos_ferramentas)formData.fotos_ferramentas=[];
+  c.innerHTML=`
+  <div class="card">
+    <div class="card-title">7.0 Ferramentas e Calibração dos Equipamentos</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:14px">Adicione fotos das ferramentas de cada equipe com suas legendas.</p>
+    <div class="fotos-grid" id="grid-ferramentas"></div>
+    <button class="btn-add-row" style="margin-top:10px" onclick="addFotoFerr()">+ Adicionar foto de ferramental</button>
+    <input type="file" id="ferr-file-input" accept="image/*" onchange="onFerrFileChange(this)">
+  </div>
+  <div class="card">
+    <div class="card-title">7.1 Observações do Ferramental</div>
+    <div class="field-group">
+      <label>Texto de Observações</label>
+      <textarea id="obs_ferramental" rows="5" placeholder="Ex: As ferramentas apresentadas possuem laudos dentro do prazo de validade...">${esc(formData.obs_ferramental||'')}</textarea>
+    </div>
+  </div>`;
+  renderFotosFerrGrid();
+}
+let _ferrTargetIdx=null;
+function renderFotosFerrGrid(){
+  const grid=document.getElementById('grid-ferramentas');if(!grid)return;
+  grid.innerHTML=(formData.fotos_ferramentas||[]).map((f,i)=>`
+    <div class="foto-item">
+      <div class="foto-box" onclick="triggerFerrUpload(${i})">
+        ${f.src?`<img src="${f.src}"><div class="foto-overlay">🔄 Trocar</div>`:`<span style="font-size:26px">🔧</span><span style="font-size:12px;color:var(--gray);margin-top:6px">Clique para upload</span>`}
+      </div>
+      <button class="btn-remove-foto" onclick="removeFotoFerr(${i},event)">✕</button>
+      <input class="foto-label-input" type="text" value="${esc(f.legenda||'')}" onchange="formData.fotos_ferramentas[${i}].legenda=this.value" placeholder="Ex: Ferramental equipe 1">
+    </div>`).join('');
+}
+function triggerFerrUpload(i){_ferrTargetIdx=i;document.getElementById('ferr-file-input').click()}
+function onFerrFileChange(inp){
+  const file=inp.files[0];if(!file||_ferrTargetIdx===null)return;
+  const reader=new FileReader();
+  reader.onload=e=>{formData.fotos_ferramentas[_ferrTargetIdx].src=e.target.result;renderFotosFerrGrid();_ferrTargetIdx=null};
+  reader.readAsDataURL(file);inp.value='';
+}
+function addFotoFerr(){if(!formData.fotos_ferramentas)formData.fotos_ferramentas=[];formData.fotos_ferramentas.push({legenda:'',src:null});renderFotosFerrGrid()}
+function removeFotoFerr(i,e){e.stopPropagation();formData.fotos_ferramentas.splice(i,1);renderFotosFerrGrid()}
+
+// STEP 10 — Veículos
+function renderStep10(c){
+  if(!formData.veiculos_apoio)formData.veiculos_apoio=[];
+  c.innerHTML=`
+  <div class="card">
+    <div class="card-title">8.1 Caminhões Apresentados na VCTE</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:14px">Para cada equipe de campo, adicione as fotos do caminhão correspondente (já cadastrado na etapa de Equipes).</p>
+    <div id="veic-caminhoes"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">9. Veículos de Apoio</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:14px">Adicione os veículos de apoio com fotos e dados.</p>
+    <div id="veic-apoio-list"></div>
+    <button class="btn-add-equipe" style="margin-top:6px" onclick="addVeiculoApoio()">+ Adicionar Veículo de Apoio</button>
+    <input type="file" id="apoio-file-input" accept="image/*" onchange="onApoioFileChange(this)">
+  </div>
+  <div class="card">
+    <div class="card-title">10.0 Descrição Geral dos Veículos</div>
+    <div class="field-group">
+      <label>Observações gerais sobre os veículos</label>
+      <textarea id="desc_veiculos_obs" rows="4" placeholder="Descrição e observações gerais sobre os veículos apresentados...">${esc(formData.desc_veiculos_obs||'')}</textarea>
+    </div>
+  </div>`;
+  renderVeicCaminhoes();renderVeicApoio();
+}
+
+function renderVeicCaminhoes(){
+  const cont=document.getElementById('veic-caminhoes');if(!cont)return;
+  if(!formData.equipes_campo||!formData.equipes_campo.length){cont.innerHTML='<p style="color:var(--gray);font-size:12px">Nenhuma equipe cadastrada. Volte à etapa de Equipes.</p>';return}
+  cont.innerHTML=formData.equipes_campo.map((eq,ei)=>{
+    if(!eq.fotos_caminhao)eq.fotos_caminhao=[];
+    return`<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--gray-light)">
+      <p style="font-weight:700;color:var(--navy);font-size:13px;margin-bottom:8px">8.2 Apresentação do Caminhão — Equipe ${ei+1} (Placa: ${eq.placa||'—'})</p>
+      <div class="field-grid cols-2" style="margin-bottom:10px;max-width:500px">
+        <div><span style="font-size:11px;color:var(--gray)">Modelo:</span> <b style="font-size:12px">${eq.modelo||'—'}</b></div>
+        <div><span style="font-size:11px;color:var(--gray)">Ano:</span> <b style="font-size:12px">${eq.ano_veiculo||'—'}</b></div>
+      </div>
+      <div class="fotos-grid" id="grid-cam-${ei}"></div>
+      <button class="btn-add-row" style="margin-top:8px" onclick="addFotoCam(${ei})">+ Foto do caminhão</button>
+      <input type="file" id="cam-file-${ei}" accept="image/*" onchange="onCamFileChange(this,${ei})">
+    </div>`;
+  }).join('');
+  formData.equipes_campo.forEach((eq,ei)=>renderFotosCamGrid(ei));
+}
+function renderFotosCamGrid(ei){
+  const grid=document.getElementById(`grid-cam-${ei}`);if(!grid)return;
+  const fotos=formData.equipes_campo[ei].fotos_caminhao||[];
+  grid.innerHTML=fotos.map((f,fi)=>`
+    <div class="foto-item">
+      <div class="foto-box" onclick="triggerCamUpload(${ei},${fi})">
+        ${f.src?`<img src="${f.src}"><div class="foto-overlay">🔄 Trocar</div>`:`<span style="font-size:26px">🚛</span><span style="font-size:11px;color:var(--gray);margin-top:4px">Clique para upload</span>`}
+      </div>
+      <button class="btn-remove-foto" onclick="removeFotoCam(${ei},${fi},event)">✕</button>
+      <input class="foto-label-input" type="text" value="${esc(f.legenda||'')}" onchange="formData.equipes_campo[${ei}].fotos_caminhao[${fi}].legenda=this.value" placeholder="Legenda">
+    </div>`).join('');
+}
+function addFotoCam(ei){if(!formData.equipes_campo[ei].fotos_caminhao)formData.equipes_campo[ei].fotos_caminhao=[];formData.equipes_campo[ei].fotos_caminhao.push({legenda:'',src:null});renderFotosCamGrid(ei)}
+function triggerCamUpload(ei,fi){document.getElementById(`cam-file-${ei}`)._target=fi;document.getElementById(`cam-file-${ei}`).click()}
+function onCamFileChange(inp,ei){
+  const fi=inp._target;const file=inp.files[0];if(!file||fi===undefined)return;
+  const reader=new FileReader();
+  reader.onload=e=>{formData.equipes_campo[ei].fotos_caminhao[fi].src=e.target.result;renderFotosCamGrid(ei)};
+  reader.readAsDataURL(file);inp.value='';
+}
+function removeFotoCam(ei,fi,e){e.stopPropagation();formData.equipes_campo[ei].fotos_caminhao.splice(fi,1);renderFotosCamGrid(ei)}
+
+let _apoioFotoTarget=null;
+function renderVeicApoio(){
+  const cont=document.getElementById('veic-apoio-list');if(!cont)return;
+  cont.innerHTML=(formData.veiculos_apoio||[]).map((v,vi)=>`
+    <div class="equipe-card" style="margin-bottom:12px">
+      <div class="equipe-header">
+        <h4>Veículo de Apoio ${vi+1}</h4>
+        <button class="btn-remove-equipe" onclick="removeVeiculoApoio(${vi})">🗑</button>
+      </div>
+      <div class="equipe-body">
+        <div class="equipe-veiculo">
+          <div class="field-group"><label>Modelo</label><input type="text" value="${esc(v.modelo||'')}" onchange="formData.veiculos_apoio[${vi}].modelo=this.value" placeholder="FIAT/STRADA HD WK CD E"></div>
+          <div class="field-group mono"><label>Placa</label><input type="text" value="${esc(v.placa||'')}" onchange="formData.veiculos_apoio[${vi}].placa=this.value" placeholder="QOK 2G00"></div>
+          <div class="field-group"><label>Tipo/Equipe</label><input type="text" value="${esc(v.equipe||'APOIO')}" onchange="formData.veiculos_apoio[${vi}].equipe=this.value" placeholder="APOIO"></div>
+          <div class="field-group mono"><label>Ano Fabricação</label><input type="text" value="${esc(v.ano||'')}" onchange="formData.veiculos_apoio[${vi}].ano=this.value" placeholder="2018"></div>
+        </div>
+        <p class="equipe-section-label" style="margin-top:8px">Fotos do Veículo de Apoio</p>
+        <div class="fotos-grid" id="grid-apoio-${vi}"></div>
+        <button class="btn-add-row" style="margin-top:8px" onclick="addFotoApoio(${vi})">+ Foto</button>
+        <input type="file" id="apoio-file-${vi}" accept="image/*" onchange="onApoioFileChangeV(this,${vi})">
+      </div>
+    </div>`).join('');
+  (formData.veiculos_apoio||[]).forEach((_,vi)=>renderFotosApoioGrid(vi));
+}
+function renderFotosApoioGrid(vi){
+  const grid=document.getElementById(`grid-apoio-${vi}`);if(!grid)return;
+  const fotos=(formData.veiculos_apoio[vi].fotos||[]);
+  grid.innerHTML=fotos.map((f,fi)=>`
+    <div class="foto-item">
+      <div class="foto-box" onclick="document.getElementById('apoio-file-${vi}')._fi=${fi};document.getElementById('apoio-file-${vi}').click()">
+        ${f.src?`<img src="${f.src}"><div class="foto-overlay">🔄</div>`:`<span style="font-size:24px">🚗</span>`}
+      </div>
+      <button class="btn-remove-foto" onclick="removeFotoApoio(${vi},${fi},event)">✕</button>
+      <input class="foto-label-input" type="text" value="${esc(f.legenda||'')}" onchange="formData.veiculos_apoio[${vi}].fotos[${fi}].legenda=this.value" placeholder="Legenda">
+    </div>`).join('');
+}
+function addFotoApoio(vi){if(!formData.veiculos_apoio[vi].fotos)formData.veiculos_apoio[vi].fotos=[];formData.veiculos_apoio[vi].fotos.push({legenda:'',src:null});renderFotosApoioGrid(vi)}
+function onApoioFileChangeV(inp,vi){
+  const fi=inp._fi||0;const file=inp.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{if(!formData.veiculos_apoio[vi].fotos)formData.veiculos_apoio[vi].fotos=[];formData.veiculos_apoio[vi].fotos[fi].src=e.target.result;renderFotosApoioGrid(vi)};
+  reader.readAsDataURL(file);inp.value='';
+}
+function removeFotoApoio(vi,fi,e){e.stopPropagation();formData.veiculos_apoio[vi].fotos.splice(fi,1);renderFotosApoioGrid(vi)}
+function addVeiculoApoio(){if(!formData.veiculos_apoio)formData.veiculos_apoio=[];formData.veiculos_apoio.push({modelo:'',equipe:'APOIO',placa:'',ano:'',fotos:[]});renderVeicApoio()}
+function removeVeiculoApoio(vi){formData.veiculos_apoio.splice(vi,1);renderVeicApoio()}
+
+// STEP 10b — Observações Gerais da VCTE
+function renderStep10b(c){
+  const def=formData.obs_vcte||gerarObsVcteDefault();
+  c.innerHTML=`<div class="card">
+  <div class="card-title">Observações Gerais da VCTE</div>
+  <p style="font-size:12px;color:var(--gray);margin-bottom:14px">Texto pré-preenchido com modelo padrão. Edite conforme necessário.</p>
+  <div class="field-group">
+    <label>Texto de Observações</label>
+    <textarea id="obs_vcte" rows="12">${esc(def)}</textarea>
+  </div></div>`;
+}
+function gerarObsVcteDefault(){
+  return `As demais não conformidades anotadas na VCTE foram sanadas até a data de emissão desse relatório.\n\nAPROVAÇÃO CONDICIONAL:\n\n  • Ressaltamos que o caminhão da empresa ${formData.razao_social||'[RAZÃO SOCIAL]'}, placa [PLACA], estará apto a operar somente até [MÊS/ANO], devido ao término da validade de 15 anos, conforme especificação da VCTE.`;
+}
+function renderStep11(c){
+  if(!formData.laudos_guindauto)formData.laudos_guindauto=[];
+  c.innerHTML=`
+  <div class="card">
+    <div class="card-title">8.3 Laudo Técnico de Inspeção do Guindauto</div>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:16px">Faça upload dos laudos em PDF. Uma pré-visualização será exibida e o conteúdo será incorporado ao relatório final.</p>
+    <div id="laudos-list"></div>
+    <div class="import-box" onclick="document.getElementById('laudo-pdf-input').click()" style="margin-top:12px">
+      <span style="font-size:28px">📋</span>
+      <p>Clique para adicionar um Laudo PDF</p>
+      <span>Arquivos .pdf — cada laudo será pré-visualizado abaixo</span>
+    </div>
+    <input type="file" id="laudo-pdf-input" accept="application/pdf" onchange="onLaudoUpload(this)">
+  </div>`;
+  renderLaudosList();
+}
+function renderLaudosList(){
+  const cont=document.getElementById('laudos-list');if(!cont)return;
+  if(!formData.laudos_guindauto||!formData.laudos_guindauto.length){cont.innerHTML='<p style="color:var(--gray);font-size:12px;text-align:center;padding:16px">Nenhum laudo adicionado ainda.</p>';return}
+  cont.innerHTML=formData.laudos_guindauto.map((l,i)=>`
+    <div style="border:1.5px solid var(--gray-border);border-radius:10px;overflow:hidden;margin-bottom:14px">
+      <div style="background:var(--blue-light);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--green-light)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:20px">📄</span>
+          <div>
+            <input style="font-size:13px;font-weight:700;color:var(--navy);border:none;background:transparent;outline:none;width:300px" value="${esc(l.nome||'Laudo '+(i+1))}" onchange="formData.laudos_guindauto[${i}].nome=this.value">
+            <div style="font-size:11px;color:var(--gray)">${l.tamanho||''}</div>
+          </div>
+        </div>
+        <button class="btn-remove-row" onclick="removeLaudo(${i})" style="font-size:18px">🗑</button>
+      </div>
+      <div style="background:#f5f5f5;padding:8px;min-height:200px;display:flex;align-items:center;justify-content:center">
+        <object data="${l.dataUrl}" type="application/pdf" style="width:100%;height:500px;border:none;border-radius:6px">
+          <div style="padding:20px;text-align:center;color:var(--gray)">
+            <p style="font-size:13px;margin-bottom:8px">📋 Pré-visualização não disponível neste browser.</p>
+            <a href="${l.dataUrl}" target="_blank" style="color:var(--green);font-weight:600;font-size:13px">Abrir PDF em nova aba →</a>
+          </div>
+        </object>
+      </div>
+    </div>`).join('');
+}
+function onLaudoUpload(inp){
+  const file=inp.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    if(!formData.laudos_guindauto)formData.laudos_guindauto=[];
+    formData.laudos_guindauto.push({
+      nome:file.name.replace('.pdf',''),
+      dataUrl:e.target.result,
+      tamanho:(file.size/1024).toFixed(0)+' KB'
+    });
+    renderLaudosList();showToast('Laudo adicionado ✓','success');
+  };
+  reader.readAsDataURL(file);inp.value='';
+}
+function removeLaudo(i){formData.laudos_guindauto.splice(i,1);renderLaudosList()}
+
+// STEP 12 — Conclusão
+function renderStep12(c){
+  const def=formData.conclusao||gerarConclusaoDefault();
+  c.innerHTML=`<div class="card">
+  <div class="card-title">11.0 Conclusão</div>
+  <p style="font-size:12px;color:var(--gray);margin-bottom:14px">Texto gerado com base no resultado. Edite se necessário.</p>
+  <div class="field-group"><label>Texto de Conclusão</label>
+  <textarea id="conclusao" rows="10">${esc(def)}</textarea></div></div>`;
+}
+function gerarConclusaoDefault(){
+  const rs=formData.razao_social||'[RAZÃO SOCIAL]';
+  const resultado=formData.resultado||'ATENDE';
+  return`Diante das conformidades verificadas durante a avaliação da empresa ${rs}, e considerando as exigências estabelecidas na Instrução para Cadastramento de Fornecedores da CEMIG Distribuição S/A, concluímos que a empresa ${resultado} plenamente aos requisitos previstos na presente VCTE (Verificação de Conformidade Técnica).\n\nConforme "TERMO DE CONHECIMENTO E RESPONSABILIDADE" assinado pela ${rs} no ato de solicitação da VCTE a responsabilidade técnica, pela veracidade das informações e autenticidade dos documentos de saúde e segurança ocupacional e bem-estar dos funcionários, instalações, equipamentos e veículos é exclusivamente desta empresa.`;
+}
+
+// STEP 13 — Assinaturas
+function renderStep13(c){
+  c.innerHTML=`<div class="card">
+  <div class="card-title">12.0 Equipe Responsável pelo Evento</div>
+  <table class="dyn-table"><thead><tr><th>Nome</th><th>Regional / Área</th><th style="width:36px"></th></tr></thead>
+  <tbody id="tbody-equipe-envolvida"></tbody></table>
+  <button class="btn-add-row" onclick="addMembroEnvolvido()">+ Adicionar membro</button>
+  </div>
+  <div class="card">
+  <div class="card-title">Assinaturas</div>
+  <div class="field-grid cols-2">
+    <div class="field-group"><label>Representante CEMIG Distribuição S.A.</label><input type="text" id="responsavel_cemig" value="${esc(formData.responsavel_cemig)}" placeholder="Nome do representante"></div>
+    <div class="field-group"><label>Representante da Empresa Verificada</label><input type="text" id="responsavel_empresa" value="${esc(formData.responsavel_empresa)}" placeholder="Nome do representante"></div>
+  </div></div>`;
+  renderTbodyEnvolvidos();
+}
+function renderTbodyEnvolvidos(){
+  const tb=document.getElementById('tbody-equipe-envolvida');if(!tb)return;
+  tb.innerHTML=formData.equipe_envolvida.map((m,i)=>`<tr>
+    <td><input type="text" value="${esc(m.nome)}" onchange="formData.equipe_envolvida[${i}].nome=this.value" placeholder="Nome completo"></td>
+    <td><input type="text" value="${esc(m.regional)}" onchange="formData.equipe_envolvida[${i}].regional=this.value" placeholder="Ex: PE/EM"></td>
+    <td><button class="btn-remove-row" onclick="removeEnvolvido(${i})">✕</button></td>
+  </tr>`).join('');
+}
+function addMembroEnvolvido(){formData.equipe_envolvida.push({nome:'',regional:''});renderTbodyEnvolvidos()}
+function removeEnvolvido(i){formData.equipe_envolvida.splice(i,1);renderTbodyEnvolvidos()}
+
+// COLLECT
+function collectCurrentStep(){
+  const get=id=>{const el=document.getElementById(id);return el?el.value:undefined};
+  const maps=[
+    ['razao_social','cnpj','numero_vcte','ano','data_inspecao','data_relatorio'], // 0
+    ['endereco','pessoa_contato','telefone','email'],                              // 1
+    [],                                                                            // 2 radios
+    ['num_uebs'],                                                                  // 3
+    [],                                                                            // 4 fotos
+    [],                                                                            // 5 equipes
+    ['doc_obs'],                                                                   // 6
+    ['observacoes'],                                                               // 7
+    ['obs_ferramental'],                                                           // 8
+    ['desc_veiculos_obs'],                                                         // 9
+    ['obs_vcte'],                                                                  // 10
+    [],                                                                            // 11 laudos
+    ['conclusao'],                                                                 // 12
+    ['responsavel_cemig','responsavel_empresa']                                    // 13
+  ];
+  (maps[currentStep]||[]).forEach(f=>{const v=get(f);if(v!==undefined)formData[f]=v});
+  if(currentStep===2){
+    const t=document.querySelector('input[name="tipo"]:checked');if(t)formData.tipo_avaliacao=t.value;
+    const g=document.querySelector('input[name="grupo"]:checked');if(g)formData.grupo=g.value;
+  }
+  autoSave();
+}
+
+function nextStep(){collectCurrentStep();if(currentStep<STEPS.length-1){currentStep++;renderSidebar();renderStep();document.getElementById('main').scrollTo(0,0)}}
+function prevStep(){collectCurrentStep();if(currentStep>0){currentStep--;renderSidebar();renderStep();document.getElementById('main').scrollTo(0,0)}}
+function autoSave(){clearTimeout(saveTimer);saveTimer=setTimeout(saveReport,1500)}
+
+async function saveReport(){
+  try{
+    if(!currentReportId)currentReportId=genId();
+    const record={
+      id:currentReportId,
+      numero_vcte:formData.numero_vcte||'',
+      ano:formData.ano||'',
+      razao_social:formData.razao_social||'',
+      cnpj:formData.cnpj||'',
+      resultado:formData.resultado||'rascunho',
+      updated_at:new Date().toISOString(),
+      dados:formData  // inclui fotos base64 e laudos PDF completos
+    };
+    await dbUpsert(record);
+    document.getElementById('progress-info').textContent='✓ Salvo em '+new Date().toLocaleTimeString('pt-BR');
+  }catch(e){
+    document.getElementById('progress-info').textContent='⚠ Erro ao salvar';
+    console.error('Erro ao salvar:',e);
+  }
+}
+
+async function openModal(){
+  document.getElementById('modal-overlay').classList.add('open');
+  const listEl=document.getElementById('reports-list');
+  listEl.innerHTML='<p style="color:var(--gray);text-align:center;padding:40px"><span class="spin" style="border-color:rgba(0,0,0,.15);border-top-color:var(--green);display:inline-block"></span></p>';
+  try{
+    const data=await dbGetAll();
+    // Sort by updated_at desc
+    data.sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
+    if(!data.length){listEl.innerHTML='<p style="color:var(--gray);text-align:center;padding:40px">Nenhum relatório encontrado.</p>';return}
+    listEl.innerHTML=data.map(r=>`<div class="report-list-item">
+      <div class="info">
+        <h4>${r.razao_social||'Sem título'}${r.numero_vcte?` — VCTE Nº ${r.numero_vcte}`:''}${r.ano?` / ${r.ano}`:''}</h4>
+        <p>CNPJ: ${r.cnpj||'—'} · ${new Date(r.updated_at).toLocaleString('pt-BR')}</p>
+      </div>
+      <div class="report-actions">
+        <span class="badge ${r.resultado==='ATENDE'?'atende':r.resultado==='NÃO ATENDE'?'nao-atende':'rascunho'}">${r.resultado||'RASCUNHO'}</span>
+        <button class="btn-sm outline" onclick="loadReport('${r.id}')">Abrir</button>
+        <button class="btn-sm danger" onclick="deleteReport('${r.id}',event)">Excluir</button>
+      </div></div>`).join('');
+  }catch(e){
+    listEl.innerHTML=`<p style="color:var(--red);text-align:center;padding:40px">Erro ao carregar: ${e.message}</p>`;
+  }
+}
+
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open')}
+
+async function loadReport(id){
+  try{
+    const rec=await dbGet(id);
+    if(!rec){showToast('Relatório não encontrado.','error');return}
+    formData={...JSON.parse(JSON.stringify(DEFAULT_DATA)),...rec.dados};
+    currentReportId=id;currentStep=0;closeModal();renderSidebar();renderStep();
+    showToast('Relatório carregado ✓ (com fotos e laudos)','success');
+  }catch(e){showToast('Erro ao carregar: '+e.message,'error')}
+}
+
+async function deleteReport(id,e){
+  e.stopPropagation();
+  if(!confirm('Excluir este relatório permanentemente?'))return;
+  try{
+    await dbDelete(id);
+    if(currentReportId===id)newReport();
+    openModal();showToast('Relatório excluído.','success');
+  }catch(e){showToast('Erro ao excluir.','error')}
+}
+
+function newReport(){formData=JSON.parse(JSON.stringify(DEFAULT_DATA));currentReportId=null;currentStep=0;renderSidebar();renderStep()}
+
+// ===== PDF GENERATION =====
+async function generatePDF(){
+  collectCurrentStep();
+  showToast('Gerando PDF...','');
+  await saveReport(); // salva com fotos e laudos antes de gerar;
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'p',unit:'mm',format:'a4'});
+  const pw=doc.internal.pageSize.getWidth(),ph=doc.internal.pageSize.getHeight();
+  const ml=18,mr=18;let y=0;const W=pw-ml-mr;
+  const NAVY={r:26,g:58,b:26},GREEN={r:46,g:125,b:50},GREEN2={r:76,g:175,b:80};
+  const GLIGHT={r:165,g:214,b:167},GBKG={r:240,g:250,b:240},RED={r:192,g:57,b:43},GRAY={r:107,g:114,b:128};
+  const HDR_H=12;
+
+  const LOGO_DATA='data:image/png;base64,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';
+  function addPageHeader(){
+    // Fundo verde escuro
+    doc.setFillColor(NAVY.r,NAVY.g,NAVY.b);doc.rect(0,0,pw,HDR_H,'F');
+    // Logo CEMIG colado na borda esquerda
+    try{doc.addImage(LOGO_DATA,'PNG',1,0.8,20,10.4)}catch(e){}
+    // Textos começam após o logo (ml+22)
+    const tx=ml+8;
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(255,255,255);
+    doc.text('RELATÓRIO DE VERIFICAÇÃO E CONFORMIDADE TÉCNICA — VCTE',tx,5);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(GLIGHT.r,GLIGHT.g,GLIGHT.b);
+    const rsShort=doc.splitTextToSize(formData.razao_social||'',pw-mr-tx-40)[0]||'';
+    doc.text(rsShort,pw-mr,5,{align:'right'});
+    doc.setLineWidth(0.2);y=HDR_H+5;
+  }
+  function addPage(){doc.addPage();addPageHeader()}
+  function checkY(n){if(y+n>ph-14)addPage()}
+
+  function secTitle(t){
+    checkY(14);
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    doc.text(t,ml,y);
+    doc.setDrawColor(GREEN.r,GREEN.g,GREEN.b);doc.setLineWidth(0.5);
+    doc.line(ml,y+2,ml+W,y+2);
+    doc.setLineWidth(0.2);y+=10;
+  }
+  function tHeader(cols,widths){
+    checkY(9);
+    doc.setFillColor(GREEN.r,GREEN.g,GREEN.b);doc.rect(ml,y,W,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(255,255,255);
+    let x=ml+2;cols.forEach((col,i)=>{doc.text(col,x,y+5.5);x+=widths[i]});y+=8;
+  }
+  function tRow(cells,widths,even){
+    const rH=7;checkY(rH+1);
+    if(even){doc.setFillColor(GBKG.r,GBKG.g,GBKG.b);doc.rect(ml,y,W,rH,'F')}
+    doc.setDrawColor(210,230,210);doc.line(ml,y+rH,ml+W,y+rH);
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30,30,30);
+    let x=ml+2;cells.forEach((cell,i)=>{
+      const txt=doc.splitTextToSize(String(cell||''),widths[i]-4)[0]||'';
+      doc.text(txt,x,y+5);x+=widths[i];
+    });y+=rH;
+  }
+  function infoRow2(label,value){
+    const rH=8;checkY(rH);
+    doc.setFillColor(220,240,220);doc.rect(ml,y,58,rH,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(GREEN.r,GREEN.g,GREEN.b);
+    doc.text(label,ml+2,y+5.5);
+    doc.setFont('helvetica','normal');doc.setTextColor(30,30,30);
+    doc.text(String(value||'—'),ml+60,y+5.5);
+    doc.setDrawColor(200,225,200);doc.line(ml,y+rH,ml+W,y+rH);y+=rH;
+  }
+
+  // ===== PAGE 1 =====
+  addPageHeader();
+
+  // Title
+  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+  doc.text('RELATÓRIO DE VERIFICAÇÃO E CONFORMIDADE TÉCNICA –VCTE',pw/2,y+8,{align:'center'});
+  doc.setDrawColor(NAVY.r,NAVY.g,NAVY.b);doc.setLineWidth(0.5);
+  doc.line(ml,y+10,ml+W,y+10);doc.setLineWidth(0.2);y+=18;
+
+  // ID block — label em linha cheia (verde), valor na linha seguinte (fundo claro)
+  function idRow(label,value){
+    const valLines=doc.splitTextToSize(String(value||'—'),W-6);
+    const valH=Math.max(8,valLines.length*5.5+3);
+    // Linha do rótulo
+    doc.setFillColor(GREEN.r,GREEN.g,GREEN.b);doc.rect(ml,y,W,7,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(255,255,255);
+    doc.text(label,ml+3,y+5);
+    y+=7;
+    // Linha do valor
+    doc.setFillColor(GBKG.r,GBKG.g,GBKG.b);doc.rect(ml,y,W,valH,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    valLines.forEach((l,li)=>doc.text(l,ml+3,y+5.5+li*5.5));
+    doc.setDrawColor(GLIGHT.r,GLIGHT.g,GLIGHT.b);doc.setLineWidth(0.3);
+    doc.rect(ml,y-7,W,7+valH,'D');doc.setLineWidth(0.2);
+    y+=valH+1;
+  }
+  idRow('RAZÃO SOCIAL DA EMPRESA VERIFICADA',formData.razao_social);
+  idRow('CNPJ',formData.cnpj);
+  // N° VCTE e ANO lado a lado
+  doc.setFillColor(GREEN.r,GREEN.g,GREEN.b);doc.rect(ml,y,W/2-2,7,'F');
+  doc.setFillColor(GREEN.r,GREEN.g,GREEN.b);doc.rect(ml+W/2+2,y,W/2-2,7,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(255,255,255);
+  doc.text('N° VCTE',ml+3,y+5);
+  doc.text('ANO',ml+W/2+5,y+5);
+  y+=7;
+  doc.setFillColor(GBKG.r,GBKG.g,GBKG.b);doc.rect(ml,y,W/2-2,9,'F');
+  doc.setFillColor(GBKG.r,GBKG.g,GBKG.b);doc.rect(ml+W/2+2,y,W/2-2,9,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+  doc.text(formData.numero_vcte||'—',ml+W/4,y+6.5,{align:'center'});
+  doc.text(formData.ano||'—',ml+W*3/4+2,y+6.5,{align:'center'});
+  doc.setDrawColor(GLIGHT.r,GLIGHT.g,GLIGHT.b);doc.setLineWidth(0.3);
+  doc.rect(ml,y-7,W/2-2,16,'D');
+  doc.rect(ml+W/2+2,y-7,W/2-2,16,'D');
+  doc.setLineWidth(0.2);y+=10;
+
+  // Dates
+  doc.setFillColor(220,240,220);doc.rect(ml,y,W,8,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+  doc.text(`DATA DA INSPEÇÃO: ${formatDate(formData.data_inspecao)}`,ml+2,y+5.5);
+  doc.text(`DATA DO RELATÓRIO: ${formatDate(formData.data_relatorio)}`,ml+W/2+2,y+5.5);
+  doc.setDrawColor(GLIGHT.r,GLIGHT.g,GLIGHT.b);doc.rect(ml,y,W,8,'D');y+=14;
+
+  // Section 1 - Cadastro
+  secTitle('1.0   INFORMAÇÕES CADASTRAIS');
+  infoRow2('ENDEREÇO:',formData.endereco);
+  infoRow2('PESSOA DE CONTATO:',formData.pessoa_contato);
+  infoRow2('TELEFONE:',formData.telefone);
+  infoRow2('E-MAIL:',formData.email);
+  y+=8;
+
+  // Section 2 - Dados Avaliação — use boxes instead of unicode checkboxes
+  secTitle('2.0   DADOS DA AVALIAÇÃO');
+  const hab=formData.tipo_avaliacao==='habilitacao';
+  const g32=formData.grupo==='0832';
+  const col1x=ml+4, col2x=ml+W*0.5;
+  const boxY1=y+1, boxY2=y+10;
+
+  function drawCheck(bx,by,checked,label){
+    doc.setDrawColor(80,80,80);doc.setLineWidth(0.4);
+    doc.rect(bx,by,4,4,'D');
+    if(checked){
+      doc.setDrawColor(GREEN.r,GREEN.g,GREEN.b);doc.setLineWidth(0.8);
+      doc.line(bx+0.5,by+2,bx+1.5,by+3.5);doc.line(bx+1.5,by+3.5,bx+3.5,by+0.5);
+    }
+    doc.setLineWidth(0.2);
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30,30,30);
+    doc.text(label,bx+6,by+3.8);
+  }
+  drawCheck(col1x,boxY1,hab,'Habilitação Cadastral Inicial');
+  drawCheck(col1x,boxY2,!hab,'Reavaliação');
+  drawCheck(col2x,boxY1,g32,'Grupo 0832 – PART REDES/ CONSTRUÇÃO');
+  drawCheck(col2x,boxY2,!g32,'Grupo 0833 – PART REDES/ LINHA VIVA');
+  y+=22;
+
+  // Section 3 - Resultado
+  checkY(30);secTitle('3.0   RESULTADOS DA AVALIAÇÃO');
+  const isAt=formData.resultado==='ATENDE';
+  doc.setDrawColor(NAVY.r,NAVY.g,NAVY.b);doc.setLineWidth(0.5);
+  doc.rect(ml,y,W*0.45,22,'D');
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+  doc.text("U E B's",ml+W*0.225,y+8,{align:'center'});
+  doc.text(formData.num_uebs||'—',ml+W*0.225,y+16,{align:'center'});
+  doc.rect(ml+W*0.5,y,W*0.5,22,'D');
+  doc.setFontSize(9);doc.text('ATENDE A INSTRUÇÃO PARA',ml+W*0.75,y+7,{align:'center'});
+  doc.text('HABILITAÇÃO CADASTRAL',ml+W*0.75,y+12,{align:'center'});
+  doc.setFontSize(14);doc.setTextColor(isAt?GREEN.r:RED.r,isAt?GREEN.g:RED.g,isAt?GREEN.b:RED.b);
+  doc.text(formData.resultado||'—',ml+W*0.75,y+20,{align:'center'});
+  doc.setLineWidth(0.2);y+=30;
+
+  // Section 4 - Fotos empresa
+  const fotosComSrc=formData.fotos.filter(f=>f.src);
+  if(fotosComSrc.length>0){
+    addPage();secTitle('4.0   APRESENTAÇÃO DA EMPRESA');
+    for(let fi=0;fi<fotosComSrc.length;fi++){
+      const foto=fotosComSrc[fi];
+      checkY(96);
+      try{
+        doc.addImage(foto.src,'JPEG',ml,y,W,78);
+        y+=82; // 78 image + 4 gap before legend
+        if(foto.legenda){
+          doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+          doc.text(foto.legenda,pw/2,y,{align:'center'});
+          y+=12;
+        }
+      }catch(e){}
+    }
+  }
+
+  // Section 5 - Equipes (sem sub-header OBRAS PART)
+  addPage();secTitle('5.0   INFORMAÇÕES SOBRE EQUIPE E VEÍCULOS');
+  infoRow2('FORNECEDOR SOLICITANTE:',formData.razao_social);y+=4;
+
+  // Equipe Estrutural table
+  doc.setFillColor(GREEN.r,GREEN.g,GREEN.b);doc.rect(ml,y,W,8,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(255,255,255);
+  doc.text('EQUIPE ESTRUTURAL',ml+2,y+5.5);y+=8;
+  const esW=[W*0.38,W*0.32,W*0.17,W*0.13];
+  tHeader(['Nome','Função','CPF','CTPS'],esW);
+  formData.equipe_estrutural.forEach((m,i)=>tRow([m.nome,m.funcao,m.cpf,m.ctps],esW,i%2===0));
+  y+=6;
+
+  // Equipes de campo
+  formData.equipes_campo.forEach((eq,ei)=>{
+    checkY(16);
+    doc.setFillColor(GREEN2.r,GREEN2.g,GREEN2.b);doc.rect(ml,y,W,8,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(255,255,255);
+    doc.text(`EQUIPE ${ei+1}`,ml+2,y+5.5);y+=8;
+    // Vehicle data
+    const vW=[W*0.22,W*0.22,W*0.28,W*0.28];
+    tHeader(['Placa do Veículo:','Ano do Veículo:','Marca:','Modelo:'],vW);
+    tRow([eq.placa,eq.ano_veiculo,eq.marca,eq.modelo],vW,false);y+=2;
+    const vW2=[W*0.28,W*0.22,W*0.25,W*0.25];
+    tHeader(['Veículo Locado?','Fab. Cesto Acoplado:','Fabricante Cab. Aux.:','Ano Fab./Nº de Série:'],vW2);
+    tRow([eq.locado,eq.fab_cesto,eq.fab_cab,eq.ano_cab],vW2,false);y+=2;
+    const vW3=[W*0.38,W*0.32,W*0.3];
+    tHeader(['Fabricante Guindauto/Modelo','Ano Fab./Nº de Série Guind.',''],vW3);
+    tRow([eq.fab_guindauto,eq.ano_guindauto,''],vW3,false);y+=4;
+    // Members
+    checkY(10);
+    doc.setFillColor(GBKG.r,GBKG.g,GBKG.b);doc.rect(ml,y,W,7,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    doc.text('Componentes da equipe de construção apresentada:',ml+2,y+5);y+=7;
+    const mW=[W*0.38,W*0.22,W*0.22,W*0.18];
+    tHeader(['Nome','Função','CPF','CTPS'],mW);
+    eq.membros.forEach((m,i)=>tRow([m.nome,m.funcao,m.cpf,m.ctps],mW,i%2===0));
+    y+=6;
+  });
+
+  // Section 6 - Documentação Obrigatória
+  addPage();secTitle('6.0   DOCUMENTAÇÃO OBRIGATÓRIA, VCTE-GM-0832, REV. "I" 09/2022:');
+  // Doc table header
+  const dW=[12,48,W-12-48-16-16,16,16];
+  doc.setFillColor(GREEN.r,GREEN.g,GREEN.b);doc.rect(ml,y,W,8,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(255,255,255);
+  doc.text('ITEM',ml+2,y+5.5);
+  doc.text('DOCUMENTO',ml+14,y+5.5);
+  doc.text('DESCRIÇÃO E ESPECIFICAÇÕES DA ENTREGA',ml+64,y+5.5);
+  doc.text('C',ml+W-28,y+5.5,{align:'center'});
+  doc.text('NC',ml+W-12,y+5.5,{align:'center'});
+  y+=8;
+  DOC_ITEMS.forEach((item,i)=>{
+    const descLines=doc.splitTextToSize(item.desc,dW[2]-4);
+    const docLines=doc.splitTextToSize(item.doc,dW[1]-4);
+    const maxLines=Math.max(descLines.length,docLines.length,1);
+    const rowH=maxLines*4.5+5;checkY(rowH+2);
+    if(i%2===0){doc.setFillColor(GBKG.r,GBKG.g,GBKG.b);doc.rect(ml,y,W,rowH,'F')}
+    doc.setDrawColor(210,230,210);doc.line(ml,y+rowH,ml+W,y+rowH);
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(GREEN.r,GREEN.g,GREEN.b);
+    doc.text(String(item.num),ml+6,y+5.5,{align:'center'});
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(30,30,30);
+    docLines.forEach((l,li)=>doc.text(l,ml+14,y+5+li*4.5));
+    doc.setFont('helvetica','normal');doc.setFontSize(7);
+    descLines.forEach((l,li)=>doc.text(l,ml+64,y+5+li*4.5));
+    const st=formData.doc_status&&formData.doc_status[i]||'';
+    doc.setFont('helvetica','bold');doc.setFontSize(9);
+    if(st==='C'){doc.setTextColor(GREEN.r,GREEN.g,GREEN.b);doc.text('C',ml+W-28,y+6,{align:'center'})}
+    if(st==='NC'){doc.setTextColor(RED.r,RED.g,RED.b);doc.text('NC',ml+W-12,y+6,{align:'center'})}
+    doc.setTextColor(30,30,30);y+=rowH;
+  });
+
+  // 6.1 Observações da documentação
+  if(formData.doc_obs){
+    y+=4;checkY(16);
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    doc.text('6.1 OBSERVAÇÕES',ml,y);y+=6;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,30,30);
+    doc.splitTextToSize(formData.doc_obs,W).forEach(l=>{checkY(6);doc.text(l,ml,y);y+=5.5});
+  }
+
+  // Observações Gerais
+  addPage();
+  secTitle('6.1   OBSERVAÇÕES');
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30,30,30);
+  doc.splitTextToSize(formData.observacoes||'',W).forEach(l=>{checkY(6);doc.text(l,ml,y);y+=5.5});
+  y+=8;
+
+  // Section 7 — Ferramentas e Calibração
+  addPage();secTitle('7.0 – FERRAMENTAS E CALIBRAÇÃO DOS EQUIPAMENTOS.');
+  const fFerr=formData.fotos_ferramentas||[];
+  if(fFerr.length>0){
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    doc.text('FOTOS DAS FERRAMENTAS DA EQUIPE:',ml,y);y+=6;
+    // 2-column grid for tool photos
+    const imgW2=(W-6)/2;
+    for(let fi=0;fi<fFerr.length;fi+=2){
+      const rowH=55;checkY(rowH+10);
+      try{if(fFerr[fi].src)doc.addImage(fFerr[fi].src,'JPEG',ml,y,imgW2,rowH)}catch(e){}
+      try{if(fFerr[fi+1]&&fFerr[fi+1].src)doc.addImage(fFerr[fi+1].src,'JPEG',ml+imgW2+6,y,imgW2,rowH)}catch(e){}
+      y+=rowH+5;
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+      const leg1=fFerr[fi].legenda||'';const leg2=fFerr[fi+1]?fFerr[fi+1].legenda||'':'';
+      if(leg1)doc.text(leg1,ml+imgW2/2,y,{align:'center'});
+      if(leg2)doc.text(leg2,ml+imgW2+6+imgW2/2,y,{align:'center'});
+      y+=10;
+    }
+  }
+  if(formData.obs_ferramental){
+    checkY(16);
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    doc.text('7.1 – OBSERVAÇÕES DO FERRAMENTAL:',ml,y);y+=7;
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30,30,30);
+    doc.splitTextToSize(formData.obs_ferramental,W).forEach(l=>{checkY(6);doc.text(l,ml,y);y+=5.5});
+  }
+  y+=8;
+
+  // ===== SEÇÕES 8+ — numeração dinâmica =====
+  // 8.3 vem logo após 8.2 (fotos do caminhão de cada equipe)
+  // Obs. Gerais VCTE vem após 10.0 — só se houver texto
+  // 11.0 Conclusão e 12.0 Equipe mantêm numeração fixa
+
+  // Section 8 — Veículos
+  addPage();secTitle('8.0   VEÍCULOS');
+  doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+  doc.text('8.1 CAMINHÕES APRESENTADOS NA VCTE',ml,y);y+=10;
+
+  // Helper para renderizar laudos (pdf.js)
+  async function renderLaudos(){
+    const laudos=formData.laudos_guindauto||[];
+    if(!laudos.length)return;
+    for(const laudo of laudos){
+      if(!laudo.dataUrl)continue;
+      try{
+        const pdfjsLib=window['pdfjs-dist/build/pdf'];
+        if(pdfjsLib){
+          pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          const pdfDoc=await pdfjsLib.getDocument(laudo.dataUrl).promise;
+          for(let pg=1;pg<=pdfDoc.numPages;pg++){
+            const page=await pdfDoc.getPage(pg);
+            const scale=2;const vp=page.getViewport({scale});
+            const canvas=document.createElement('canvas');
+            canvas.width=vp.width;canvas.height=vp.height;
+            const ctx=canvas.getContext('2d');
+            await page.render({canvasContext:ctx,viewport:vp}).promise;
+            const imgData=canvas.toDataURL('image/jpeg',0.92);
+            const ratio=vp.height/vp.width;
+            const pdfImgW=W;const pdfImgH=Math.min(pdfImgW*ratio,ph-HDR_H-20);
+            checkY(pdfImgH+4);
+            doc.addImage(imgData,'JPEG',ml,y,pdfImgW,pdfImgH);
+            y+=pdfImgH+4;
+            if(pg<pdfDoc.numPages)addPage();
+          }
+        } else {
+          checkY(30);
+          doc.setDrawColor(200,220,200);doc.setLineWidth(0.5);doc.rect(ml,y,W,20,'D');
+          doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(GRAY.r,GRAY.g,GRAY.b);
+          doc.text('Documento PDF — arquivo original deve ser anexado.',ml+W/2,y+12,{align:'center'});
+          doc.setLineWidth(0.2);y+=28;
+        }
+      }catch(e){
+        checkY(14);
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(GRAY.r,GRAY.g,GRAY.b);
+        doc.text('Arquivo PDF referenciado — anexar ao processo.',ml,y);y+=10;
+      }
+    }
+  }
+
+  // 8.2 + 8.3 por equipe
+  const eqCampo=formData.equipes_campo||[];
+  for(let ei=0;ei<eqCampo.length;ei++){
+    const eq=eqCampo[ei];
+    checkY(16);
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    doc.text(`8.2 APRESENTAÇÃO DO CAMINHÃO EQUIPE ${ei+1}`,ml,y);y+=8;
+    const vW2=[W*0.25,W*0.25,W*0.25,W*0.25];
+    tHeader(['Placa do Veículo:','Ano do Veículo:','Marca:','Modelo:'],vW2);
+    tRow([eq.placa,eq.ano_veiculo,eq.marca,eq.modelo],vW2,false);y+=2;
+    tHeader(['Fabricante Cab. Aux.:','Ano Fab./Nº de Série:','Fabricante Guindauto/Modelo','Ano Fab./Nº de Série Guind.'],vW2);
+    tRow([eq.fab_cab,eq.ano_cab,eq.fab_guindauto,eq.ano_guindauto],vW2,false);y+=2;
+    tHeader(['Veículo Locado?','Fab. Cesto Acoplado:','',''],vW2);
+    tRow([eq.locado,eq.fab_cesto,'',''],vW2,false);y+=6;
+    // Fotos do caminhão (2 por linha)
+    const fCam=eq.fotos_caminhao||[];
+    if(fCam.length>0){
+      const imgWc=(W-6)/2;
+      for(let fi=0;fi<fCam.length;fi+=2){
+        const rH2=55;checkY(rH2+10);
+        try{if(fCam[fi].src)doc.addImage(fCam[fi].src,'JPEG',ml,y,imgWc,rH2)}catch(e){}
+        try{if(fCam[fi+1]&&fCam[fi+1].src)doc.addImage(fCam[fi+1].src,'JPEG',ml+imgWc+6,y,imgWc,rH2)}catch(e){}
+        y+=rH2+5;
+        doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(GRAY.r,GRAY.g,GRAY.b);
+        if(fCam[fi].legenda)doc.text(fCam[fi].legenda,ml+imgWc/2,y,{align:'center'});
+        if(fCam[fi+1]&&fCam[fi+1].legenda)doc.text(fCam[fi+1].legenda,ml+imgWc+6+imgWc/2,y,{align:'center'});
+        y+=10;
+      }
+    }
+    y+=4;
+    // 8.3 Laudo logo após as fotos desta equipe — sempre em página nova
+    if((formData.laudos_guindauto||[]).length>0){
+      addPage();
+      doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+      doc.text('8.3 LAUDO TÉCNICO DE INSPEÇÃO DO GUINDAUTO',ml,y);
+      doc.setDrawColor(GREEN.r,GREEN.g,GREEN.b);doc.setLineWidth(0.5);
+      doc.line(ml,y+2,ml+W,y+2);doc.setLineWidth(0.2);y+=10;
+      await renderLaudos();
+    }
+  }
+
+  // 9. Veículos de apoio
+  const vApoio=formData.veiculos_apoio||[];
+  if(vApoio.length>0){
+    addPage();
+    doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    doc.text('9. VEÍCULOS DE APOIO',ml,y);y+=10;
+    vApoio.forEach(v=>{
+      const fAp=v.fotos||[];
+      if(fAp.length>0){
+        const imgWa=(W-6)/2;
+        for(let fi=0;fi<fAp.length;fi+=2){
+          checkY(58);
+          try{if(fAp[fi].src)doc.addImage(fAp[fi].src,'JPEG',ml,y,imgWa,50)}catch(e){}
+          try{if(fAp[fi+1]&&fAp[fi+1].src)doc.addImage(fAp[fi+1].src,'JPEG',ml+imgWa+6,y,imgWa,50)}catch(e){}
+          y+=55;
+          doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(GRAY.r,GRAY.g,GRAY.b);
+          if(fAp[fi].legenda)doc.text(fAp[fi].legenda,ml+imgWa/2,y,{align:'center'});
+          if(fAp[fi+1]&&fAp[fi+1].legenda)doc.text(fAp[fi+1].legenda,ml+imgWa+6+imgWa/2,y,{align:'center'});
+          y+=10;
+        }
+      }
+    });
+    y+=6;
+  }
+
+  // 10.0 Descrição Geral dos Veículos
+  addPage();secTitle('10.0   DESCRIÇÃO GERAL DOS VEÍCULOS:');
+  eqCampo.forEach((eq,ei)=>{
+    checkY(20);
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    doc.text(`VEÍCULO PESADO EQUIPE ${ei+1}:`,ml,y);y+=6;
+    const dW2=[W/2,W/2];
+    tHeader([`Modelo: ${eq.marca||''} ${eq.modelo||''}`,`Placa: ${eq.placa||''}`],dW2);y+=2;
+    tHeader([`Ano de fabricação: ${eq.ano_veiculo||'—'}`,' '],dW2);y+=6;
+  });
+  vApoio.forEach(v=>{
+    checkY(20);
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+    doc.text('VEÍCULO MÉDIO PARA TRANSPORTE DA EQUIPE E APOIO A OBRA:',ml,y);y+=6;
+    const dW3=[W/2,W/2];
+    tHeader([`Modelo: ${v.modelo||'—'}`,`Equipe: ${v.equipe||'APOIO'}`],dW3);y+=2;
+    tHeader([`Ano de fabricação: ${v.ano||'—'}`,`Placa: ${v.placa||'—'}`],dW3);y+=6;
+  });
+  if(formData.desc_veiculos_obs){
+    y+=4;doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(30,30,30);
+    doc.splitTextToSize(formData.desc_veiculos_obs,W).forEach(l=>{checkY(6);doc.text(l,ml,y);y+=5.5});
+  }
+
+  // Obs. Gerais da VCTE — só se houver texto, logo após 10.0
+  // Numeração: com obs_vcte → 11.0=obs, 12.0=conclusão, 13.0=equipe
+  //            sem obs_vcte → 11.0=conclusão, 12.0=equipe
+  const hasObsVcte=!!(formData.obs_vcte&&formData.obs_vcte.trim());
+  const nConc=hasObsVcte?12:11;
+  const nEq=hasObsVcte?13:12;
+
+  if(hasObsVcte){
+    addPage();
+    secTitle('11.0   OBSERVAÇÕES GERAIS DA VCTE');
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30,30,30);
+    doc.splitTextToSize(formData.obs_vcte,W).forEach(l=>{checkY(6);doc.text(l,ml,y);y+=5.5});
+    y+=6;
+  }
+
+  // Conclusão
+  addPage();secTitle(`${nConc}.0   CONCLUSÃO:`);
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30,30,30);
+  doc.splitTextToSize(formData.conclusao||'',W).forEach(l=>{checkY(6);doc.text(l,ml,y);y+=5.5});
+  y+=12;
+
+  // Equipe Responsável
+  addPage();secTitle(`${nEq}.0   EQUIPE RESPONSÁVEL PELO EVENTO:`);
+  formData.equipe_envolvida.forEach(m=>{
+    if(m.nome){checkY(6);doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30,30,30);doc.text(`${m.nome}${m.regional?' '+m.regional:''}`,ml,y);y+=6}
+  });
+  y+=16;
+
+  // Assinaturas
+  checkY(36);
+  doc.setDrawColor(100,100,100);doc.setLineWidth(0.4);
+  const sig1x=ml,sig2x=ml+W/2+10,sigW=W/2-10;
+  doc.line(sig1x,y,sig1x+sigW,y);doc.line(sig2x,y,sig2x+sigW,y);y+=5;
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(NAVY.r,NAVY.g,NAVY.b);
+  doc.text('CEMIG DISTRIBUIÇÃO S.A.',sig1x,y);
+  doc.text(formData.razao_social||'EMPRESA VERIFICADA',sig2x,y);y+=5;
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(GRAY.r,GRAY.g,GRAY.b);
+  doc.text(formData.responsavel_cemig||'',sig1x,y);
+  doc.text(formData.responsavel_empresa||'',sig2x,y);
+
+  // Footer em todas as páginas
+  const totalPgs=doc.getNumberOfPages();
+  for(let p=1;p<=totalPgs;p++){
+    doc.setPage(p);
+    doc.setFillColor(NAVY.r,NAVY.g,NAVY.b);doc.rect(0,ph-10,pw,10,'F');
+    doc.setDrawColor(GREEN2.r,GREEN2.g,GREEN2.b);doc.setLineWidth(0.4);doc.line(0,ph-10,pw,ph-10);
+    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(GLIGHT.r,GLIGHT.g,GLIGHT.b);
+    doc.text(`Página ${p} de ${totalPgs}`,pw-mr,ph-4,{align:'right'});
+    doc.setLineWidth(0.2);
+  }
+
+  saveReport();
+  const fn=`VCTE_${formData.numero_vcte||'N'}_${formData.ano||''}_${(formData.razao_social||'relatorio').replace(/\s+/g,'_').substring(0,20)}.pdf`;
+  doc.save(fn);showToast('PDF gerado com sucesso! ✓','success');
+}
+
+function esc(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function formatDate(d){if(!d)return'—';try{const[y,m,day]=d.split('-');return`${day}/${m}/${y}`}catch{return d}}
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');t.textContent=msg;
+  t.className='show'+(type?' '+type:'');clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.className=''},3500);
+}
+</script>
 </body>
-
 </html>
